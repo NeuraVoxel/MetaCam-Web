@@ -1,0 +1,48 @@
+.debug-panel {
+  position: absolute;
+  /* top: 20px; */
+  /* left: 20px; */
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  /* padding: 15px; */
+  border-radius: 8px;
+  /* width: 250px; */
+  /* font-family: monospace; */
+  backdrop-filter: blur(5px);
+  text-align: left;
+}
+
+.debug-panel h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  padding-bottom: 5px;
+}
+
+.debug-panel h4 {
+  margin: 10px 0 5px 0;
+  font-size: 11px;
+  color: #4CAF50;
+}
+
+.debug-section {
+  margin-bottom: 15px;
+}
+
+.debug-section p {
+  margin: 5px 0;
+  font-size: 12px;
+}
+
+.debug-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 5px 0;
+}
+
+.debug-section li {
+  font-size: 12px;
+  margin: 2px 0;
+  color: #8bc34a;
+} 
