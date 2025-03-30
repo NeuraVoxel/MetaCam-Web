@@ -39,7 +39,7 @@ function LoginPage() {
           onClick={() => alert('隐私政策')}
           title="隐私政策"
         >
-          🔒
+          ❓
         </button>
         <button 
           className="top-right-button" 
