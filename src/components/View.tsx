@@ -14,13 +14,15 @@ const View = () => {
   const [batteryLevel, setBatteryLevel] = useState(85);
   const [dataCollecting, setDataCollecting] = useState(true);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  // 在View组件的state中添加showDebugPanel属性
   const [config, setConfig] = useState({
     resolution: 'high',
     frameRate: '30',
     pointSize: 3,
     colorMode: 'height',
     autoSave: true,
-    saveInterval: 60
+    saveInterval: 60,
+    showDebugPanel: true // 默认显示调试面板
   });
 
   useEffect(() => {
@@ -114,6 +116,7 @@ const View = () => {
             height={800}
             pointSize={config.pointSize}
             colorMode={config.colorMode}
+            showDebugPanel={config.showDebugPanel} // 传递showDebugPanel属性
           />
         </div>
         

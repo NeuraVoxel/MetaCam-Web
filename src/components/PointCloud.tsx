@@ -21,6 +21,7 @@ interface PointCloudProps {
   batteryTopic?: string;
   pointSize?: number;
   colorMode?: string;
+  showDebugPanel?: boolean; // 添加控制DebugPanel显示隐藏的属性
 }
 
 const PointCloud: React.FC<PointCloudProps> = ({
@@ -29,7 +30,8 @@ const PointCloud: React.FC<PointCloudProps> = ({
   frameId = 'camera_init',
   width = "100%",
   height = "100%",
-  batteryTopic = '/battery_state'
+  batteryTopic = '/battery_state',
+  showDebugPanel = true // 默认显示DebugPanel
 }) => {
   const viewerRef = useRef<HTMLDivElement>(null);
   const viewerId = 'pointcloud-viewer';
@@ -595,7 +597,7 @@ worker2.onerror = (event) => {
 
   return (
     <div className="pointcloud-container">
-      <DebugPanel debugInfo={debugInfo} />
+      {showDebugPanel && <DebugPanel debugInfo={debugInfo} />}
       {
         // <div className="pointcloud-header">
         //   <BatteryIndicator percentage={batteryLevel} />
@@ -610,4 +612,4 @@ worker2.onerror = (event) => {
   );
 };
 
-export default PointCloud; 
+export default PointCloud;

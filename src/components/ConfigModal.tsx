@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './ConfigModal.css';
 
+// 在ConfigModal组件中添加showDebugPanel属性
 interface ConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -123,6 +124,20 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 value={config.saveInterval} 
                 onChange={handleChange}
                 disabled={!config.autoSave}
+              />
+            </div>
+          </div>
+          
+          <div className="config-section">
+            <h3>显示设置</h3>
+            <div className="config-row">
+              <label htmlFor="showDebugPanel">显示调试面板</label>
+              <input 
+                type="checkbox" 
+                id="showDebugPanel" 
+                name="showDebugPanel" 
+                checked={config.showDebugPanel} 
+                onChange={handleChange}
               />
             </div>
           </div>
