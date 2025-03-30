@@ -190,7 +190,7 @@ main {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin-top: 1rem;
+  /* margin-top: 1rem; */
 }
 
 .back-button:hover {
