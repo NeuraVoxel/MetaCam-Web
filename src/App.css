@@ -85,14 +85,16 @@ main {
 
 .card-button:nth-child(1) { /* 设备状态 */
   grid-column: 1;
-  grid-row: 1 / span 2; /* 跨两行 */
-  align-self: center;
+  grid-row: 1 / span 2;
+  align-self: stretch; /* 修改为stretch使卡片撑满高度 */
+  height: 100%; /* 添加高度100%确保撑满 */
 }
 
 .card-button:nth-child(4) { /* 开始作业 */
   grid-column: 3;
-  grid-row: 1 / span 2; /* 跨两行 */
-  align-self: center;
+  grid-row: 1 / span 2;
+  align-self: stretch; /* 修改为stretch使卡片撑满高度 */
+  height: 100%; /* 添加高度100%确保撑满 */
 }
 
 .card-button {
