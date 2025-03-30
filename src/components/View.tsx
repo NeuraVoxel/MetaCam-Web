@@ -30,43 +30,55 @@ const View = () => {
           className="back-button"
           onClick={() => navigate('/')}
         >
-          ← 返回
+          <span className="back-icon">←</span> 返回
         </button>
         
         <div className="status-bar">
           <div className="status-item">
-            <span>设备状态: {deviceStatus}</span>
+            <span className="status-label">设备状态:</span>
+            <span className={`status-value ${deviceStatus === '运行中' ? 'status-active' : ''}`}>{deviceStatus}</span>
           </div>
           <div className="status-item">
-            <span>作业时间: {elapsedTime}</span>
+            <span className="status-label">作业时间:</span>
+            <span className="status-value">{elapsedTime}</span>
           </div>
           <div className="status-item">
-            <span>存储空间: {storageSpace}</span>
+            <span className="status-label">存储空间:</span>
+            <span className="status-value">{storageSpace}</span>
           </div>
           <div className="status-item">
-            <span>RTK: {rtkStatus}</span>
+            <span className="status-label">RTK:</span>
+            <span className={`status-value ${rtkStatus === '已连接' ? 'status-connected' : 'status-disconnected'}`}>
+              {rtkStatus}
+            </span>
           </div>
           <div className="status-item signal-indicator">
-            <span>信号: </span>
+            <span className="status-label">信号:</span>
             <div className="signal-level">
-              {signalStrength >= 4 && <span className="signal-bar full"></span>}
-              {signalStrength >= 3 && <span className="signal-bar high"></span>}
-              {signalStrength >= 2 && <span className="signal-bar medium"></span>}
-              {signalStrength >= 1 && <span className="signal-bar low"></span>}
-              {signalStrength === 0 && <span className="signal-bar none">✖</span>}
+              {[1, 2, 3, 4].map(level => (
+                <span 
+                  key={level} 
+                  className={`signal-bar ${level <= signalStrength ? 'active' : 'inactive'}`}
+                  style={{ height: `${level * 3}px` }}
+                ></span>
+              ))}
             </div>
           </div>
           <div className="status-item battery-indicator">
-            <span>电量: </span>
-            <div className="battery-level">
-              {Array(Math.ceil(batteryLevel/20)).fill('▮').map((_, i) => (
-                <span key={i} className={`battery-segment ${i === 0 ? 'first' : ''} ${i === 4 ? 'last' : ''}`}></span>
-              ))}
+            <span className="status-label">电量:</span>
+            <div className="battery-container">
+              <div 
+                className="battery-level-fill"
+                style={{ width: `${batteryLevel}%`, 
+                  backgroundColor: batteryLevel > 50 ? '#4CAF50' : 
+                                  batteryLevel > 20 ? '#FFC107' : '#F44336' 
+                }}
+              ></div>
             </div>
-            <span>{batteryLevel}%</span>
+            <span className="battery-percentage">{batteryLevel}%</span>
           </div>
           <button className="settings-button">
-            ⚙️
+            <span className="settings-icon">⚙️</span>
           </button>
         </div>
       </div>
