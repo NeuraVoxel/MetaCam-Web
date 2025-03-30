@@ -4,87 +4,115 @@ import './View.css';
 
 const View = () => {
   const navigate = useNavigate();
-  const [deviceStatus, setDeviceStatus] = useState('运行中');
-  const [elapsedTime, setElapsedTime] = useState('00:00:00');
-  const [storageSpace, setStorageSpace] = useState('128GB / 256GB');
-  const [rtkStatus, setRtkStatus] = useState('已连接');
+  const [isRecording, setIsRecording] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState('00:23');
+  const [storageSpace, setStorageSpace] = useState('167G');
+  const [rtkStatus, setRtkStatus] = useState('无解');
   const [signalStrength, setSignalStrength] = useState(4);
   const [batteryLevel, setBatteryLevel] = useState(85);
+  const [dataCollecting, setDataCollecting] = useState(true);
 
   useEffect(() => {
     // 模拟计时器
-    const timer = setInterval(() => {
-      const startTime = new Date(0);
-      const totalSeconds = elapsedTime.split(':').reduce((acc, time) => (60 * acc) + +time, 0);
-      startTime.setSeconds(totalSeconds + 1);
-      setElapsedTime(startTime.toISOString().substr(11, 8));
-    }, 1000);
+    if (isRecording) {
+      const timer = setInterval(() => {
+        const [minutes, seconds] = elapsedTime.split(':').map(Number);
+        let newSeconds = seconds + 1;
+        let newMinutes = minutes;
+        
+        if (newSeconds >= 60) {
+          newSeconds = 0;
+          newMinutes += 1;
+        }
+        
+        setElapsedTime(`${newMinutes.toString().padStart(2, '0')}:${newSeconds.toString().padStart(2, '0')}`);
+      }, 1000);
+      
+      return () => clearInterval(timer);
+    }
+  }, [isRecording, elapsedTime]);
 
-    return () => clearInterval(timer);
-  }, [elapsedTime]);
+  const toggleRecording = () => {
+    setIsRecording(!isRecording);
+  };
 
   return (
     <div className="view-container">
-      <div className="view-header">
-        <button 
-          className="back-button"
-          onClick={() => navigate('/')}
-        >
-          <span className="back-icon">←</span> 返回
-        </button>
-        
-        <div className="status-bar">
-          <div className="status-item">
-            <span className="status-label">设备状态:</span>
-            <span className={`status-value ${deviceStatus === '运行中' ? 'status-active' : ''}`}>{deviceStatus}</span>
+      {/* 顶部状态栏 */}
+      <div className="status-bar">
+        <div className="left-controls">
+          <button className="back-button" onClick={() => navigate('/')}>
+            &lt; 返回
+          </button>
+          <div className={`status-indicator ${dataCollecting ? 'active' : ''}`}>
+            数据采集中
           </div>
+        </div>
+        
+        <div className="status-info">
           <div className="status-item">
-            <span className="status-label">作业时间:</span>
+            <span className="status-label">作业时间</span>
             <span className="status-value">{elapsedTime}</span>
           </div>
           <div className="status-item">
-            <span className="status-label">存储空间:</span>
+            <span className="status-label">剩余空间</span>
             <span className="status-value">{storageSpace}</span>
           </div>
           <div className="status-item">
-            <span className="status-label">RTK:</span>
-            <span className={`status-value ${rtkStatus === '已连接' ? 'status-connected' : 'status-disconnected'}`}>
-              {rtkStatus}
-            </span>
+            <span className="status-label">RTK</span>
+            <span className="status-value">{rtkStatus}</span>
           </div>
-          <div className="status-item signal-indicator">
-            <span className="status-label">信号:</span>
-            <div className="signal-level">
-              {[1, 2, 3, 4].map(level => (
-                <span 
-                  key={level} 
-                  className={`signal-bar ${level <= signalStrength ? 'active' : 'inactive'}`}
-                  style={{ height: `${level * 3}px` }}
-                ></span>
+          <div className="status-item">
+            <div className="signal-strength">
+              {Array(5).fill(0).map((_, i) => (
+                <div key={i} className={`signal-bar ${i < signalStrength ? 'active' : ''}`}></div>
               ))}
             </div>
           </div>
-          <div className="status-item battery-indicator">
-            <span className="status-label">电量:</span>
-            <div className="battery-container">
-              <div 
-                className="battery-level-fill"
-                style={{ width: `${batteryLevel}%`, 
-                  backgroundColor: batteryLevel > 50 ? '#4CAF50' : 
-                                  batteryLevel > 20 ? '#FFC107' : '#F44336' 
-                }}
-              ></div>
+          <div className="status-item">
+            <div className="battery-indicator">
+              <div className="battery-level" style={{ width: `${batteryLevel}%` }}></div>
             </div>
-            <span className="battery-percentage">{batteryLevel}%</span>
           </div>
-          <button className="settings-button">
-            <span className="settings-icon">⚙️</span>
+          <button className="settings-button">⚙️</button>
+        </div>
+      </div>
+      
+      {/* 主视图区域 - 点云数据 */}
+      <div className="main-view">
+        {/* 这里可以集成您的点云渲染组件 */}
+        <div className="point-cloud-placeholder">
+          {/* 点云数据将在这里渲染 */}
+        </div>
+        
+        {/* 中心标记 */}
+        <div className="center-marker"></div>
+        
+        {/* 全景预览窗口 */}
+        <div className="panorama-preview">
+          <button className="close-preview">✕</button>
+          <div className="panorama-image">
+            {/* 全景图像将在这里显示 */}
+          </div>
+        </div>
+        
+        {/* 右侧功能按钮 */}
+        <div className="right-controls">
+          <button className={`record-button ${isRecording ? 'recording' : ''}`} onClick={toggleRecording}>
+            <span className="record-icon"></span>
+          </button>
+          <button className="location-button">
+            <span className="location-icon"></span>
+          </button>
+          <button className="files-button">
+            <span className="files-icon"></span>
           </button>
         </div>
       </div>
-
-      <div className="view-content">
-        {/* 这里可以添加作业视图内容 */}
+      
+      {/* 底部进度条 */}
+      <div className="progress-bar">
+        <div className="progress-indicator"></div>
       </div>
     </div>
   );

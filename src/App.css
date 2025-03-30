@@ -127,8 +127,8 @@ main {
 }
 
 .status-indicator {
-  width: 12px;
-  height: 12px;
+  width: 120px;
+  /* height: 12px; */
   border-radius: 50%;
   margin-right: 8px;
 }
