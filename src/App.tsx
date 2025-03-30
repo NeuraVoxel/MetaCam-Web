@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import PointCloud from './components/PointCloud';
+import View from './components/View';
+import { useNavigate } from 'react-router-dom'; // Add this import
 
 function LoginPage() {
+  const navigate = useNavigate(); // Add this line
   const [isDeviceConnected, setIsDeviceConnected] = useState(false);
 
   // 模拟设备连接状态检查
@@ -12,7 +15,7 @@ function LoginPage() {
     const checkConnection = async () => {
       try {
         // 替换为实际的连接检查
-        const connected = false; // 默认为未连接
+        const connected = true; // 默认为未连接
         setIsDeviceConnected(connected);
       } catch (error) {
         console.error('检查设备连接失败:', error);
@@ -24,7 +27,7 @@ function LoginPage() {
 
   const handleStart = () => {
     if (isDeviceConnected) {
-      window.location.href = '/point-cloud';
+      navigate('/view'); // 修改为跳转到view页面
     }
   };
 
@@ -104,6 +107,7 @@ function App() {
             />
           </div>
         } />
+        <Route path="/view" element={<View />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
