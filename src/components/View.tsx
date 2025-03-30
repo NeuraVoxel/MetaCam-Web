@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './View.css';
+import ConfigModal from './ConfigModal';
 
 const View = () => {
   const navigate = useNavigate();
@@ -11,6 +12,15 @@ const View = () => {
   const [signalStrength, setSignalStrength] = useState(4);
   const [batteryLevel, setBatteryLevel] = useState(85);
   const [dataCollecting, setDataCollecting] = useState(true);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [config, setConfig] = useState({
+    resolution: 'high',
+    frameRate: '30',
+    pointSize: 3,
+    colorMode: 'height',
+    autoSave: true,
+    saveInterval: 60
+  });
 
   useEffect(() => {
     // 模拟计时器
@@ -34,6 +44,20 @@ const View = () => {
 
   const toggleRecording = () => {
     setIsRecording(!isRecording);
+  };
+
+  const openConfigModal = () => {
+    setIsConfigModalOpen(true);
+  };
+
+  const closeConfigModal = () => {
+    setIsConfigModalOpen(false);
+  };
+
+  const saveConfig = (newConfig: any) => {
+    setConfig(newConfig);
+    console.log('保存配置:', newConfig);
+    // 这里可以添加将配置保存到后端或本地存储的逻辑
   };
 
   return (
@@ -74,7 +98,7 @@ const View = () => {
               <div className="battery-level" style={{ width: `${batteryLevel}%` }}></div>
             </div>
           </div>
-          <button className="settings-button">⚙️</button>
+          <button className="settings-button" onClick={openConfigModal}>⚙️</button>
         </div>
       </div>
       
@@ -114,6 +138,14 @@ const View = () => {
       <div className="progress-bar">
         <div className="progress-indicator"></div>
       </div>
+
+      {/* 配置弹窗 */}
+      <ConfigModal
+        isOpen={isConfigModalOpen}
+        onClose={closeConfigModal}
+        onSave={saveConfig}
+        initialConfig={config}
+      />
     </div>
   );
 };
