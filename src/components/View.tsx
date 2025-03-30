@@ -59,7 +59,7 @@ const View = () => {
             <span>{batteryLevel}%</span>
           </div>
           <button className="settings-button">
-            ⚙️ 参数设置
+            ⚙️
           </button>
         </div>
       </div>
