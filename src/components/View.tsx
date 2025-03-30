@@ -20,7 +20,7 @@ const View = () => {
     frameRate: '30',
     pointSize: 3,
     colorMode: 'height',
-    autoSave: true,
+    autoSave: false,
     saveInterval: 60,
     showDebugPanel: true // 默认显示调试面板
   });
@@ -117,6 +117,7 @@ const View = () => {
             pointSize={config.pointSize}
             colorMode={config.colorMode}
             showDebugPanel={config.showDebugPanel} // 传递showDebugPanel属性
+             stlPath="/assets/8888.stl"
           />
         </div>
         

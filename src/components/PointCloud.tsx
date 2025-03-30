@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import ROSLIB from 'roslib';
 import * as ROS3D from 'ros3d';
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import BatteryIndicator from './BatteryIndicator';
 import ConnectionControl from './ConnectionControl';
 import DebugPanel from "./DebugPanel";
@@ -22,6 +23,7 @@ interface PointCloudProps {
   pointSize?: number;
   colorMode?: string;
   showDebugPanel?: boolean; // 添加控制DebugPanel显示隐藏的属性
+  stlPath?: string; // 添加STL文件路径属性
 }
 
 const PointCloud: React.FC<PointCloudProps> = ({
@@ -31,7 +33,8 @@ const PointCloud: React.FC<PointCloudProps> = ({
   width = "100%",
   height = "100%",
   batteryTopic = '/battery_state',
-  showDebugPanel = true // 默认显示DebugPanel
+  showDebugPanel = false,
+  stlPath = '/models/8888.stl' // 默认STL文件路径
 }) => {
   const viewerRef = useRef<HTMLDivElement>(null);
   const viewerId = 'pointcloud-viewer';
@@ -344,7 +347,7 @@ worker2.onerror = (event) => {
 
     stats.dom.style.position = "absolute";
     stats.dom.style.top = "0px";
-    // viewerRef.current.appendChild(stats.dom);
+    viewerRef.current.appendChild(stats.dom);
 
     console.log(THREE.REVISION);
 
@@ -429,6 +432,64 @@ worker2.onerror = (event) => {
     const cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
 
+    // 加载STL模型
+    const loadSTLModel = () => {
+      const loader = new STLLoader();
+      loader.load(
+        stlPath,
+        (geometry) => {
+          // 计算包围盒以便将模型居中
+          geometry.computeBoundingBox();
+          const boundingBox = geometry.boundingBox;
+          
+          if (boundingBox) {
+            // 计算模型中心点
+            const center = new THREE.Vector3();
+            boundingBox.getCenter(center);
+            
+            // 创建材质
+            const material = new THREE.MeshPhongMaterial({
+              color: 0x00aaff,
+              specular: 0x111111,
+              shininess: 200
+            });
+            
+            // 创建网格
+            const mesh = new THREE.Mesh(geometry, material);
+            
+            // 将模型移动到场景中心
+            mesh.position.set(-center.x, -center.y, -center.z);
+            
+            // 添加到场景
+            scene.add(mesh);
+            
+            console.log('STL模型加载成功，已放置在场景中心');
+          }
+        },
+        (xhr) => {
+          console.log((xhr.loaded / xhr.total) * 100 + '% 已加载');
+        },
+        (error) => {
+          console.error('STL加载错误:', error);
+        }
+      );
+    };
+
+    // 执行STL模型加载
+    loadSTLModel();
+
+    // 添加光源以便能够看到STL模型
+    const ambientLight = new THREE.AmbientLight(0x404040, 1);
+    scene.add(ambientLight);
+
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight1.position.set(1, 1, 1);
+    scene.add(directionalLight1);
+
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+    directionalLight2.position.set(-1, -1, -1);
+    scene.add(directionalLight2);
+
     // Create point cloud
     if (!pointCloud) {
       pointCloud = new THREE.Points(particlesGeometry, particlesMaterial);
@@ -479,7 +540,7 @@ worker2.onerror = (event) => {
     };
 
     // Initialize default waveform
-    createDebugPointCloud();
+    // createDebugPointCloud();
 
     console.log(scene);
 
@@ -507,7 +568,7 @@ worker2.onerror = (event) => {
       // Update debug information
       setDebugInfo({
         fps: currentFPS,
-        pointCount: particlesGeometry.attributes.position.count,
+        pointCount: particlesGeometry.attributes.position?.count,
         isWorkerSupported: isWorkerSupported(),
         isWorkerLoaded: isWorkerLoaded,
         decodedWith: decodedWith,
@@ -534,7 +595,9 @@ worker2.onerror = (event) => {
 
       if (viewerRef.current) {
         viewerRef.current.removeChild(renderer.domElement);
-        viewerRef.current.removeChild(stats.dom);
+        if (viewerRef.current.contains(stats.dom)) {
+          viewerRef.current.removeChild(stats.dom);
+        }
       }
 
       scene.clear();
@@ -542,7 +605,7 @@ worker2.onerror = (event) => {
       particlesGeometry.dispose();
       particlesMaterial.dispose();
     };
-  }, []);
+  }, [stlPath]);
 
   const parsePointCloud = (msg: any) => {
     console.log("not from web worker");
