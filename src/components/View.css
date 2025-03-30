@@ -291,3 +291,25 @@
   width: 50%;
   background-color: #fff;
 }
+
+.point-cloud-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* 确保其他元素在点云上方显示 */
+.center-marker {
+  z-index: 2;
+}
+
+.panorama-preview {
+  z-index: 3;
+}
+
+.right-controls {
+  z-index: 3;
+}

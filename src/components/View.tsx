@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './View.css';
 import ConfigModal from './ConfigModal';
+import PointCloud from './PointCloud'; // 导入PointCloud组件
 
 const View = () => {
   const navigate = useNavigate();
@@ -104,9 +105,16 @@ const View = () => {
       
       {/* 主视图区域 - 点云数据 */}
       <div className="main-view">
-        {/* 这里可以集成您的点云渲染组件 */}
-        <div className="point-cloud-placeholder">
-          {/* 点云数据将在这里渲染 */}
+        {/* 集成PointCloud组件 */}
+        <div className="point-cloud-container">
+          <PointCloud 
+            url="ws://192.168.1.11:9090"
+            topic="/lidar_out"
+            width={1200}
+            height={800}
+            pointSize={config.pointSize}
+            colorMode={config.colorMode}
+          />
         </div>
         
         {/* 中心标记 */}

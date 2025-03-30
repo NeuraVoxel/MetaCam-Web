@@ -19,6 +19,8 @@ interface PointCloudProps {
   width?: number;
   height?: number;
   batteryTopic?: string;
+  pointSize?: number;
+  colorMode?: string;
 }
 
 const PointCloud: React.FC<PointCloudProps> = ({
@@ -595,13 +597,13 @@ worker2.onerror = (event) => {
     <div className="pointcloud-container">
       <DebugPanel debugInfo={debugInfo} />
       {
-        <div className="pointcloud-header">
-          <BatteryIndicator percentage={batteryLevel} />
-          <ConnectionControl
-            isConnected={isConnected}
-            onToggleConnection={handleToggleConnection}
-          />
-        </div>
+        // <div className="pointcloud-header">
+        //   <BatteryIndicator percentage={batteryLevel} />
+        //   <ConnectionControl
+        //     isConnected={isConnected}
+        //     onToggleConnection={handleToggleConnection}
+        //   />
+        // </div>
       }
       <div id={viewerId} ref={viewerRef} />
     </div>

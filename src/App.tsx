@@ -97,7 +97,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<LoginPage />} />
-        <Route path="/point-cloud" element={
+        {/* <Route path="/point-cloud" element={
           <div className="App">
             <PointCloud 
               url="ws://192.168.1.11:9090"
@@ -106,7 +106,7 @@ function App() {
               height={800}
             />
           </div>
-        } />
+        } /> */}
         <Route path="/view" element={<View />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
