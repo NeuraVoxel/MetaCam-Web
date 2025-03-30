@@ -46,8 +46,15 @@ const View = () => {
           <div className="status-item">
             <span>RTK: {rtkStatus}</span>
           </div>
-          <div className="status-item">
-            <span>信号: {Array(signalStrength).fill('📶').join('')}</span>
+          <div className="status-item signal-indicator">
+            <span>信号: </span>
+            <div className="signal-level">
+              {signalStrength >= 4 && <span className="signal-bar full"></span>}
+              {signalStrength >= 3 && <span className="signal-bar high"></span>}
+              {signalStrength >= 2 && <span className="signal-bar medium"></span>}
+              {signalStrength >= 1 && <span className="signal-bar low"></span>}
+              {signalStrength === 0 && <span className="signal-bar none">✖</span>}
+            </div>
           </div>
           <div className="status-item battery-indicator">
             <span>电量: </span>
