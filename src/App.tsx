@@ -30,6 +30,29 @@ function LoginPage() {
 
   return (
     <div className="login-container">
+      <div className="top-right-buttons">
+        <button 
+          className="top-right-button" 
+          onClick={() => alert('隐私政策')}
+          title="隐私政策"
+        >
+          🔒
+        </button>
+        <button 
+          className="top-right-button" 
+          onClick={() => alert('联系方式')}
+          title="联系方式"
+        >
+          ✉️
+        </button>
+        <button 
+          className="top-right-button" 
+          onClick={() => alert('软件/固件下载')}
+          title="软件/固件下载"
+        >
+          ⬇️
+        </button>
+      </div>
       <h1>MetaCam</h1>
       
       <div className="card-container">
