@@ -14,7 +14,16 @@ const View = () => {
   const [batteryLevel, setBatteryLevel] = useState(85);
   const [dataCollecting, setDataCollecting] = useState(true);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  // 在View组件的state中添加showDebugPanel属性
+  
+  // 添加系统状态
+  const [systemStatus, setSystemStatus] = useState({
+    sdCard: { status: 'active', label: 'SD卡' },
+    slam: { status: 'warning', label: 'SLAM' },
+    cam: { status: 'active', label: 'CAM' },
+    lidar: { status: 'active', label: 'LIDAR' }
+  });
+  
+  // 其他状态保持不变
   const [config, setConfig] = useState({
     resolution: 'high',
     frameRate: '30',
@@ -22,7 +31,7 @@ const View = () => {
     colorMode: 'height',
     autoSave: false,
     saveInterval: 60,
-    showDebugPanel: true // 默认显示调试面板
+    showDebugPanel: true
   });
 
   useEffect(() => {
@@ -73,6 +82,16 @@ const View = () => {
           </button>
           <div className={`status-indicator ${dataCollecting ? 'active' : ''}`}>
             数据采集中
+          </div>
+          
+          {/* 添加系统状态指示器 */}
+          <div className="system-status-container">
+            {Object.entries(systemStatus).map(([key, value]) => (
+              <div key={key} className="system-status-item">
+                <div className={`system-status-indicator ${value.status}`}></div>
+                <span className="system-status-label">{value.label}</span>
+              </div>
+            ))}
           </div>
         </div>
         

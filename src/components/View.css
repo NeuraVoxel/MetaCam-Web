@@ -46,6 +46,45 @@
   animation: pulse 2s infinite;
 }
 
+/* 系统状态指示器 */
+.system-status-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 20px;
+}
+
+.system-status-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.system-status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #555;
+}
+
+.system-status-indicator.active {
+  background-color: #4CAF50;
+}
+
+.system-status-indicator.warning {
+  background-color: #FFC107;
+}
+
+.system-status-indicator.error {
+  background-color: #F44336;
+}
+
+.system-status-label {
+  color: #ddd;
+  font-weight: 500;
+}
+
 @keyframes pulse {
   0% { opacity: 1; }
   50% { opacity: 0.7; }
