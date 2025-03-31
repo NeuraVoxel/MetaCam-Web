@@ -78,11 +78,11 @@ const View = () => {
         
         <div className="status-info">
           <div className="status-item">
-            <span className="status-label">作业时间</span>
+            <span className="status-label">任务时长</span>
             <span className="status-value">{elapsedTime}</span>
           </div>
           <div className="status-item">
-            <span className="status-label">剩余空间</span>
+            <span className="status-label">U盘内存</span>
             <span className="status-value">{storageSpace}</span>
           </div>
           <div className="status-item">
