@@ -432,11 +432,10 @@ self.postMessage({
     }
 
     // 添加物体
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+    const material = new THREE.MeshBasicMaterial({ color: 0xCDCDCD });
     const cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
-
 
     // 加载STL模型
     const loadSTLModel = () => {
@@ -464,20 +463,19 @@ self.postMessage({
             // 创建网格
             const mesh = new THREE.Mesh(geometry, material);
 
+            // 将模型缩小100倍
+            mesh.scale.set(0.01, 0.01, 0.01);
 
+            // 将模型放置在坐标系原点
+            mesh.position.set(-center.x * mesh.scale.x, -center.y * mesh.scale.y, -center.z * mesh.scale.z);
 
-            // 将模型移动到场景中心
-            mesh.position.set(-center.x, -center.y, -center.z);
-
-            //             // 缩放模型（如果需要）
-            //  mesh.scale.set(0.01, 0.01, 0.01);
             // 添加到场景
             scene.add(mesh);
 
             // 保存模型引用
             stlModelRef.current = mesh;
 
-            console.log('STL模型加载成功，已放置在场景中心');
+            console.log('STL模型加载成功，已缩小100倍并放置在坐标系原点');
           }
         },
         (xhr) => {
@@ -530,8 +528,6 @@ self.postMessage({
 
       return { curve, trajectoryLine };
     };
-
-
 
     // 执行STL模型加载
     loadSTLModel();
