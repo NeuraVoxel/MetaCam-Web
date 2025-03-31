@@ -361,6 +361,8 @@ self.postMessage({
       scene = new THREE.Scene();
     }
     scene.background = new THREE.Color(0x000000);
+    
+    (window as any).scene = scene;
 
     // 2. 创建透视相机（参数：视场角、宽高比、近裁剪面、远裁剪面）
     if (!camera) {
@@ -474,6 +476,7 @@ self.postMessage({
 
             // 保存模型引用
             stlModelRef.current = mesh;
+            mesh.name = 'STLModel';
 
             console.log('STL模型加载成功，已缩小100倍并放置在坐标系原点');
           }
@@ -523,9 +526,9 @@ self.postMessage({
       // 添加到场景
       scene.add(trajectoryLine);
 
-      // 保存轨迹线引用
+      // 保存轨迹线引用和曲线
       trajectoryRef.current = trajectoryLine;
-
+      
       return { curve, trajectoryLine };
     };
 
@@ -597,7 +600,6 @@ self.postMessage({
 
     // Initialize default waveform
     // createDebugPointCloud();
-
     console.log(scene);
 
     // Handle window resize
@@ -615,11 +617,59 @@ self.postMessage({
 
     // Update the animation loop to include debug info
     const fpsCounter = new FPSCounter();
+    
+    // 创建轨迹曲线并保存引用
+    const { curve } = createTrajectory();
+    
+    // 动画参数
+    let progress = 0; // 轨迹进度，0-1之间
+    const speed = 0.00005; // 移动速度
+    
+    // 相机跟随参数
+    const cameraOffset = new THREE.Vector3(0, 5, -10); // 相机相对于模型的偏移量
 
     fpsController.start((deltaTime, frameCount) => {
       stats.begin();
 
       const currentFPS = fpsCounter.update();
+      
+      // 更新STL模型位置和相机位置
+      if (stlModelRef.current && curve) {
+        // 更新进度
+        progress += speed * deltaTime;
+        if (progress > 1) progress = 0; // 循环移动
+        
+        // 获取当前轨迹点位置
+        const position = curve.getPointAt(progress);
+        
+        // 更新模型位置
+        stlModelRef.current.position.copy(position);
+        
+        // 计算切线方向（使模型朝向运动方向）
+        const tangent = curve.getTangentAt(progress);
+        const lookAtPoint = new THREE.Vector3(
+          position.x + tangent.x,
+          position.y + tangent.y,
+          position.z + tangent.z
+        );
+        stlModelRef.current.lookAt(lookAtPoint);
+        
+        // // 更新相机位置，使其跟随模型
+        // // 创建一个基于模型朝向的本地坐标系
+        // const modelDirection = new THREE.Vector3().subVectors(lookAtPoint, position).normalize();
+        // const modelRight = new THREE.Vector3(0, 1, 0).cross(modelDirection).normalize();
+        // const modelUp = new THREE.Vector3().crossVectors(modelDirection, modelRight).normalize();
+        
+        // // 计算相机位置（模型后方偏上）
+        // const cameraPosition = new THREE.Vector3()
+        //   .copy(position)
+        //   .add(modelDirection.clone().multiplyScalar(-cameraOffset.z)) // 后方
+        //   .add(modelUp.clone().multiplyScalar(cameraOffset.y)); // 上方
+        
+        // // 更新相机位置和朝向
+        // camera.position.copy(cameraPosition);
+        // camera.lookAt(position); // 相机始终看向模型
+      }
 
       // Update debug information
       setDebugInfo({
@@ -655,9 +705,7 @@ self.postMessage({
           viewerRef.current.removeChild(stats.dom);
         }
       }
-
       scene.clear();
-
       particlesGeometry.dispose();
       particlesMaterial.dispose();
     };
