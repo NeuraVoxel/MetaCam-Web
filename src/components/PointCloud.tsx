@@ -60,6 +60,11 @@ const PointCloud: React.FC<PointCloudProps> = ({
   });
   let pointCloud = new THREE.Points(particlesGeometry, particlesMaterial);
 
+  // 添加STL模型和轨迹线的引用
+  const stlModelRef = useRef<THREE.Mesh | null>(null);
+  const trajectoryRef = useRef<THREE.Line | null>(null);
+  const [animationTime, setAnimationTime] = useState(10000);
+
   const maxPointNumber = 1000000 * 3;
   let allPoints: FixedLengthArray = new FixedLengthArray(maxPointNumber);
   let allColors: FixedLengthArray = new FixedLengthArray(maxPointNumber);
@@ -209,7 +214,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
   useEffect(() => {
     if (!viewerRef.current) return;
-    let worker ;
+    let worker;
     // Initialize Web Worker
     if (isWorkerSupported()) {
       console.info("当前环境支持 Web Worker");
@@ -218,7 +223,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
       // );
 
       // console.log(new URL("../workers/pointCloudParser.worker.ts", import.meta.url));
-  
+
       // worker.onmessage = (e: MessageEvent) => {
       //   if (e.data.type === "READY") {
       //     console.log("Worker 加载成功");
@@ -290,29 +295,29 @@ self.postMessage({
 }); 
     `;
 
-const blob = new Blob([workerScript], { type: 'application/javascript' });
-const worker2 = new Worker(URL.createObjectURL(blob));
+      const blob = new Blob([workerScript], { type: 'application/javascript' });
+      const worker2 = new Worker(URL.createObjectURL(blob));
 
-worker2.onmessage = (e: MessageEvent) => {
-  if (e.data.type === "READY") {
-    console.log("Worker2 加载成功");
-    isWorkerLoaded = true;
-    workerRef.current = worker2;
-  }else {
-    decodedWith = 'worker: onmessage';
-    const { points, colors } = e.data;
-    allPoints.push(...points);
-    allColors.push(...colors);
-    renderPoints(allPoints.array, allColors.array);
-  }
-};
+      worker2.onmessage = (e: MessageEvent) => {
+        if (e.data.type === "READY") {
+          console.log("Worker2 加载成功");
+          isWorkerLoaded = true;
+          workerRef.current = worker2;
+        } else {
+          decodedWith = 'worker: onmessage';
+          const { points, colors } = e.data;
+          allPoints.push(...points);
+          allColors.push(...colors);
+          renderPoints(allPoints.array, allColors.array);
+        }
+      };
 
-worker2.onerror = (event) => {
-  console.error("Worker2 加载失败:", event);
-  isWorkerLoaded = false;
-  worker2.terminate();
-  workerRef.current = null;
-}
+      worker2.onerror = (event) => {
+        console.error("Worker2 加载失败:", event);
+        isWorkerLoaded = false;
+        worker2.terminate();
+        workerRef.current = null;
+      }
     } else {
       console.error("当前环境不支持 Web Worker");
       decodedWith = 'no worker';
@@ -432,6 +437,7 @@ worker2.onerror = (event) => {
     const cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
 
+
     // 加载STL模型
     const loadSTLModel = () => {
       const loader = new STLLoader();
@@ -441,28 +447,36 @@ worker2.onerror = (event) => {
           // 计算包围盒以便将模型居中
           geometry.computeBoundingBox();
           const boundingBox = geometry.boundingBox;
-          
+
           if (boundingBox) {
             // 计算模型中心点
             const center = new THREE.Vector3();
             boundingBox.getCenter(center);
-            
+            console.log(boundingBox);
+
             // 创建材质
             const material = new THREE.MeshPhongMaterial({
               color: 0x00aaff,
               specular: 0x111111,
               shininess: 200
             });
-            
+
             // 创建网格
             const mesh = new THREE.Mesh(geometry, material);
-            
+
+
+
             // 将模型移动到场景中心
             mesh.position.set(-center.x, -center.y, -center.z);
-            
+
+            //             // 缩放模型（如果需要）
+            //  mesh.scale.set(0.01, 0.01, 0.01);
             // 添加到场景
             scene.add(mesh);
-            
+
+            // 保存模型引用
+            stlModelRef.current = mesh;
+
             console.log('STL模型加载成功，已放置在场景中心');
           }
         },
@@ -475,8 +489,54 @@ worker2.onerror = (event) => {
       );
     };
 
+    // 创建sin函数轨迹线
+    const createTrajectory = () => {
+      // 定义轨迹参数
+      const length = 100;  // 轨迹长度
+      const points = [];
+      const amplitude = 5; // sin波振幅
+      const frequency = 0.2; // sin波频率
+
+      // 生成轨迹点
+      for (let i = 0; i <= length; i++) {
+        const x = i - length / 2;
+        const y = Math.sin(x * frequency) * amplitude;
+        const z = 0;
+        points.push(new THREE.Vector3(x, y, z));
+      }
+
+      // 创建曲线
+      const curve = new THREE.CatmullRomCurve3(points);
+
+      // 创建轨迹线几何体
+      const geometry = new THREE.BufferGeometry().setFromPoints(
+        curve.getPoints(200) // 获取更多点以使曲线更平滑
+      );
+
+      // 创建轨迹线材质
+      const material = new THREE.LineBasicMaterial({
+        color: 0xff0000,
+        linewidth: 2
+      });
+
+      // 创建轨迹线
+      const trajectoryLine = new THREE.Line(geometry, material);
+
+      // 添加到场景
+      scene.add(trajectoryLine);
+
+      // 保存轨迹线引用
+      trajectoryRef.current = trajectoryLine;
+
+      return { curve, trajectoryLine };
+    };
+
+
+
     // 执行STL模型加载
     loadSTLModel();
+
+    createTrajectory();
 
     // 添加光源以便能够看到STL模型
     const ambientLight = new THREE.AmbientLight(0x404040, 1);
@@ -605,7 +665,7 @@ worker2.onerror = (event) => {
       particlesGeometry.dispose();
       particlesMaterial.dispose();
     };
-  }, [stlPath]);
+  }, [stlPath, animationTime]);
 
   const parsePointCloud = (msg: any) => {
     console.log("not from web worker");
