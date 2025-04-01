@@ -75,26 +75,31 @@ main {
 
 /* 调整第二列中的两个按钮为垂直排列 */
 .card-button:nth-child(2),
-.card-button:nth-child(3) {
+.card-button:nth-child(3),
+.card-button:nth-child(4) {
   grid-column: 2; /* 放在第二列 */
 }
 
 .card-button:nth-child(3) {
-  grid-row: 2; /* 文件管理放在使用教程下方 */
+  grid-row: 2; /* 使用教程放在第二行 */
+}
+
+.card-button:nth-child(4) {
+  grid-row: 3; /* 文件管理放在第三行 */
 }
 
 .card-button:nth-child(1) { /* 设备状态 */
   grid-column: 1;
-  grid-row: 1 / span 2;
-  align-self: stretch; /* 修改为stretch使卡片撑满高度 */
-  height: 100%; /* 添加高度100%确保撑满 */
+  grid-row: 1 / span 3; /* 撑满三行 */
+  align-self: stretch;
+  height: 100%;
 }
 
-.card-button:nth-child(4) { /* 开始作业 */
+.card-button:nth-child(5) { /* 开始作业 */
   grid-column: 3;
-  grid-row: 1 / span 2;
-  align-self: stretch; /* 修改为stretch使卡片撑满高度 */
-  height: 100%; /* 添加高度100%确保撑满 */
+  grid-row: 1 / span 3; /* 撑满三行 */
+  align-self: stretch;
+  height: 100%;
 }
 
 .card-button {

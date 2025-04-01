@@ -166,9 +166,9 @@ const View = () => {
       </div>
       
       {/* 底部进度条 */}
-      <div className="progress-bar">
+      {/* <div className="progress-bar">
         <div className="progress-indicator"></div>
-      </div>
+      </div> */}
 
       {/* 配置弹窗 */}
       <ConfigModal

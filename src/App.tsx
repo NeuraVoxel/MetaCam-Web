@@ -4,7 +4,9 @@ import './App.css';
 import PointCloud from './components/PointCloud';
 import View from './components/View';
 import DownloadCenter from './components/DownloadCenter';
-import { useNavigate } from 'react-router-dom'; // Add this import
+import ProjectManagement from './components/ProjectManagement';
+import ProjectDetail from './components/ProjectDetail';
+import { useNavigate } from 'react-router-dom';
 
 function LoginPage() {
   const navigate = useNavigate(); // Add this line
@@ -71,6 +73,12 @@ function LoginPage() {
           </div>
         </div>
 
+        {/* 项目管理按钮 - 新增 */}
+        <div className="card-button" onClick={() => navigate('/projects')}>
+          <i>📊</i>
+          <span>项目管理</span>
+        </div>
+
         {/* 使用教程按钮 */}
         <div className="card-button" onClick={() => alert('打开使用教程')}>
           <i>📚</i>
@@ -113,6 +121,8 @@ function App() {
         } /> */}
         <Route path="/view" element={<View />} />
         <Route path="/download" element={<DownloadCenter />} />
+        <Route path="/projects" element={<ProjectManagement />} />
+        <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
