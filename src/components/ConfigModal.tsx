@@ -187,6 +187,26 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 disabled={!config.autoSave}
               />
             </div>
+            <div className="config-row">
+              <label htmlFor="formatUsb">U盘管理</label>
+              <div className="button-with-status">
+                <button 
+                  type="button" 
+                  className="format-button"
+                  onClick={() => {
+                    if (window.confirm('确定要格式化U盘吗？此操作将删除U盘上的所有数据！')) {
+                      // 这里添加格式化U盘的逻辑
+                      alert('U盘格式化成功！');
+                    }
+                  }}
+                >
+                  格式化U盘
+                </button>
+                <span className="usb-status">
+                  {config.usbConnected ? '已连接' : '未连接'}
+                </span>
+              </div>
+            </div>
           </div>
           
           <div className="config-section">

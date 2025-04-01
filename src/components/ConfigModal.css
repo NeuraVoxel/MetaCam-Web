@@ -153,3 +153,40 @@
 .save-button:hover {
   background-color: #45a049;
 }
+
+
+/* 格式化按钮样式 */
+.button-with-status {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.format-button {
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.format-button:hover {
+  background-color: #b71c1c;
+}
+
+.format-button:disabled {
+  background-color: #9e9e9e;
+  cursor: not-allowed;
+}
+
+.usb-status {
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: #333;
+  color: #ddd;
+}
