@@ -203,6 +203,47 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
             </div>
           </div>
           
+          {/* 新增IP配置部分 */}
+          <div className="config-section">
+            <h3>网络设置</h3>
+            <div className="config-row">
+              <label htmlFor="deviceIp">设备IP地址</label>
+              <input 
+                type="text" 
+                id="deviceIp" 
+                name="deviceIp" 
+                className="ip-input"
+                placeholder="例如: 192.168.0.33"
+                value={config.deviceIp || ''} 
+                onChange={handleChange}
+                pattern="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+                title="请输入有效的IP地址，例如: 192.168.0.33"
+              />
+            </div>
+            <div className="config-row">
+              <label htmlFor="autoConnect">自动连接</label>
+              <input 
+                type="checkbox" 
+                id="autoConnect" 
+                name="autoConnect" 
+                checked={config.autoConnect || false} 
+                onChange={handleChange}
+              />
+            </div>
+            <div className="config-row">
+              <label htmlFor="connectionPort">连接端口</label>
+              <input 
+                type="number" 
+                id="connectionPort" 
+                name="connectionPort" 
+                min="1" 
+                max="65535" 
+                value={config.connectionPort || 8080} 
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+          
           <div className="config-actions">
             <button type="button" className="cancel-button" onClick={onClose}>取消</button>
             <button type="submit" className="save-button">保存</button>

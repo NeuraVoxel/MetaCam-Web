@@ -73,8 +73,20 @@
   color: #ddd;
 }
 
+/* IP地址输入框样式 */
+.ip-input {
+  width: 100%;
+  background-color: #333;
+  border: 1px solid #555;
+  color: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
 .config-row input[type="range"],
 .config-row input[type="number"],
+.config-row input[type="text"],
 .config-row select {
   width: 100%;
   background-color: #333;
