@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import './App.css';
 import PointCloud from './components/PointCloud';
 import View from './components/View';
+import DownloadCenter from './components/DownloadCenter';
 import { useNavigate } from 'react-router-dom'; // Add this import
 
 function LoginPage() {
@@ -50,7 +51,10 @@ function LoginPage() {
         </button>
         <button 
           className="top-right-button" 
-          onClick={() => alert('软件/固件下载')}
+          onClick={() => {
+            navigate('/download'); 
+            // alert('软件/固件下载')
+          }}
           title="软件/固件下载"
         >
           ⬇️
@@ -108,6 +112,7 @@ function App() {
           </div>
         } /> */}
         <Route path="/view" element={<View />} />
+        <Route path="/download" element={<DownloadCenter />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
