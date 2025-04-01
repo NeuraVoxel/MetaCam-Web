@@ -71,6 +71,67 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
             </div>
           </div>
           
+          {/* 新增相机控制参数部分 */}
+          <div className="config-section">
+            <h3>相机控制</h3>
+            <div className="config-row">
+              <label htmlFor="whiteBalance">白平衡 (K)</label>
+              <div className="range-with-value">
+                <input 
+                  type="range" 
+                  id="whiteBalance" 
+                  name="whiteBalance" 
+                  min="2500" 
+                  max="10000" 
+                  step="100"
+                  value={config.whiteBalance || 5000} 
+                  onChange={handleChange}
+                />
+                <span>{config.whiteBalance || 5000}</span>
+              </div>
+            </div>
+            <div className="config-row">
+              <label htmlFor="exposure">曝光 (%)</label>
+              <div className="range-with-value">
+                <input 
+                  type="range" 
+                  id="exposure" 
+                  name="exposure" 
+                  min="0" 
+                  max="100" 
+                  value={config.exposure || 50} 
+                  onChange={handleChange}
+                />
+                <span>{config.exposure || 50}</span>
+              </div>
+            </div>
+            <div className="config-row">
+              <label htmlFor="autoExposure">自动曝光</label>
+              <input 
+                type="checkbox" 
+                id="autoExposure" 
+                name="autoExposure" 
+                checked={config.autoExposure || false} 
+                onChange={handleChange}
+              />
+            </div>
+            <div className="config-row">
+              <label htmlFor="contrast">对比度</label>
+              <div className="range-with-value">
+                <input 
+                  type="range" 
+                  id="contrast" 
+                  name="contrast" 
+                  min="0" 
+                  max="100" 
+                  value={config.contrast || 50} 
+                  onChange={handleChange}
+                />
+                <span>{config.contrast || 50}</span>
+              </div>
+            </div>
+          </div>
+          
           <div className="config-section">
             <h3>点云设置</h3>
             <div className="config-row">

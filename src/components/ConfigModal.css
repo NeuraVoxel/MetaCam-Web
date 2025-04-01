@@ -62,23 +62,21 @@
 
 .config-row {
   display: flex;
-  align-items: center;
-  margin-bottom: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 16px;
 }
 
 .config-row label {
-  flex: 1;
-  margin-right: 16px;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #ddd;
 }
 
-.config-row input[type="range"] {
-  flex: 2;
-  margin-right: 8px;
-}
-
+.config-row input[type="range"],
 .config-row input[type="number"],
 .config-row select {
-  flex: 2;
+  width: 100%;
   background-color: #333;
   border: 1px solid #555;
   color: #fff;
@@ -89,6 +87,25 @@
 .config-row input[type="checkbox"] {
   width: 20px;
   height: 20px;
+}
+
+/* 调整带有值显示的滑动条样式 */
+.range-with-value {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.range-with-value input[type="range"] {
+  flex: 1;
+  margin-right: 10px;
+  padding: 0;
+}
+
+.range-with-value span {
+  min-width: 40px;
+  text-align: right;
+  font-weight: bold;
 }
 
 .config-actions {
