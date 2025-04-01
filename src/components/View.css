@@ -352,3 +352,60 @@
 .right-controls {
   z-index: 3;
 }
+
+/* 添加响应式样式 */
+@media (max-width: 768px) {
+  .status-bar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px;
+  }
+  
+  .status-info {
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 8px;
+  }
+  
+  .panorama-preview {
+    width: 180px;
+    height: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .left-controls, .right-controls {
+    position: static;
+    transform: none;
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+  
+  .left-controls {
+    top: auto;
+    bottom: 0;
+    flex-direction: row;
+  }
+  
+  .right-controls {
+    top: auto;
+    bottom: 50px;
+    flex-direction: row;
+  }
+  
+  .panorama-preview {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 80px;
+  }
+  
+  .system-status-container {
+    margin-left: 0;
+    margin-top: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+}

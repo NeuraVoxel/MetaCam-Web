@@ -9,6 +9,7 @@
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 15px;
 }
 
 .config-modal {
@@ -189,4 +190,30 @@
   border-radius: 4px;
   background-color: #333;
   color: #ddd;
+}
+
+
+/* 添加响应式样式 */
+@media (max-width: 480px) {
+  .config-modal {
+    width: 95%;
+    max-height: 95vh;
+  }
+  
+  .config-section {
+    padding: 12px;
+  }
+  
+  .config-modal-header h2 {
+    font-size: 18px;
+  }
+  
+  .config-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .cancel-button, .save-button {
+    width: 100%;
+  }
 }
