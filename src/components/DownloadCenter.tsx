@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './DownloadCenter.css';
 
 interface Version {
@@ -9,6 +10,7 @@ interface Version {
 }
 
 const DownloadCenter: React.FC = () => {
+  const navigate = useNavigate();
   const [currentAppVersion, setCurrentAppVersion] = useState<string>('');
   const [latestAppVersion, setLatestAppVersion] = useState<Version | null>(null);
   const [currentFirmwareVersion, setCurrentFirmwareVersion] = useState<string>('');
@@ -85,7 +87,12 @@ const DownloadCenter: React.FC = () => {
 
   return (
     <div className="download-center">
-      <h2>软件/固件下载中心</h2>
+      <div className="download-header">
+        <button className="back-button" onClick={() => navigate('/')}>
+          ← 返回
+        </button>
+        <h2>软件/固件下载中心</h2>
+      </div>
       
       <div className="tabs">
         <button 

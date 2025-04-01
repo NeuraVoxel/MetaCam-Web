@@ -151,3 +151,29 @@
   font-size: 14px;
   color: #555;
 }
+
+.download-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  color: #2196f3;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 12px;
+  margin-right: 15px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.back-button:hover {
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+.download-header h2 {
+  margin: 0;
+}
