@@ -11,8 +11,11 @@ export interface ROSServiceInterface {
   getROSInstance: () => ROSLIB.Ros | null;
   subscribeTopic: <T>(topicName: string, messageType: string, callback: (message: T) => void) => ROSLIB.Topic;
   unsubscribeTopic: (topic: ROSLIB.Topic) => void;
-  createTFClient: (options: ROSLIB.TFClientOptions) => ROSLIB.TFClient;
+  createTFClient: (options: Omit<ROSLIB.TFClientOptions, 'ros'>) => ROSLIB.TFClient;
   onConnectionChange: (callback: (status: ROSConnectionStatus) => void) => () => void;
+  // 添加服务相关方法
+  callService: <T, U>(serviceName: string, serviceType: string, request: T) => Promise<U>;
+  createService: <T, U>(serviceName: string, serviceType: string) => ROSLIB.Service;
 }
 
 class ROSService implements ROSServiceInterface {
@@ -20,6 +23,7 @@ class ROSService implements ROSServiceInterface {
   private connectionListeners: ((status: ROSConnectionStatus) => void)[] = [];
   private status: ROSConnectionStatus = 'disconnected';
   private activeTopics: ROSLIB.Topic[] = [];
+  private activeServices: Map<string, ROSLIB.Service> = new Map();
 
   // 连接到ROS服务器
   connect(url: string): void {
@@ -50,14 +54,17 @@ class ROSService implements ROSServiceInterface {
     });
   }
 
-  // 断开ROS连接
-  disconnect(): void {
+   // 断开ROS连接
+   disconnect(): void {
     if (this.ros) {
       // 取消所有活跃的话题订阅
       this.activeTopics.forEach(topic => {
         topic.unsubscribe();
       });
       this.activeTopics = [];
+      
+      // 清空活跃服务列表
+      this.activeServices.clear();
 
       this.ros.close();
       this.ros = null;
@@ -117,6 +124,49 @@ class ROSService implements ROSServiceInterface {
     return new ROSLIB.TFClient(tfOptions);
   }
 
+  // 创建ROS服务
+  createService<T, U>(serviceName: string, serviceType: string): ROSLIB.Service {
+    if (!this.ros) {
+      throw new Error('ROS not connected. Please connect first.');
+    }
+
+    // 检查是否已经创建了该服务
+    const existingService = this.activeServices.get(serviceName);
+    if (existingService) {
+      return existingService;
+    }
+
+    // 创建新的服务
+    const service = new ROSLIB.Service({
+      ros: this.ros,
+      name: serviceName,
+      serviceType: serviceType
+    });
+
+    // 保存到活跃服务列表
+    this.activeServices.set(serviceName, service);
+    return service;
+  }
+
+  // 调用ROS服务
+  callService<T, U>(serviceName: string, serviceType: string, request: T): Promise<U> {
+    return new Promise((resolve, reject) => {
+      try {
+        const service = this.createService<T, U>(serviceName, serviceType);
+        
+        const serviceRequest = new ROSLIB.ServiceRequest(request);
+        
+        service.callService(serviceRequest, (response: U) => {
+          resolve(response);
+        }, (error: any) => {
+          reject(new Error(`调用服务 ${serviceName} 失败: ${error}`));
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
   // 注册连接状态变化监听器
   onConnectionChange(callback: (status: ROSConnectionStatus) => void): () => void {
     this.connectionListeners.push(callback);
@@ -142,3 +192,19 @@ class ROSService implements ROSServiceInterface {
 const rosService = new ROSService();
 
 export default rosService;
+// 示例：调用ROS服务
+async function exampleServiceCall() {
+  try {
+    // 调用服务并等待响应
+    const response = await rosService.callService<{id: string}, {success: boolean, message: string}>(
+      '/example_service',
+      'std_srvs/SetBool',
+      { id: '123' }
+    );
+    console.log('服务调用成功:', response.success, response.message);
+  } catch (error) {
+    console.error('服务调用失败:', error);
+  }
+}
+
+exampleServiceCall();
