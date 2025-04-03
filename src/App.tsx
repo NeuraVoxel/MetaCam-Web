@@ -7,10 +7,20 @@ import DownloadCenter from './components/DownloadCenter';
 import ProjectManagement from './components/ProjectManagement';
 import ProjectDetail from './components/ProjectDetail';
 import { useNavigate } from 'react-router-dom';
+import rosService from './services/ROSService';
+
+// ROS连接状态上下文
+export const ROSContext = React.createContext({
+  isConnected: false,
+  batteryLevel: 100,
+  connectToROS: (url: string) => {},
+  disconnectROS: () => {}
+});
 
 function LoginPage() {
-  const navigate = useNavigate(); // Add this line
+  const navigate = useNavigate();
   const [isDeviceConnected, setIsDeviceConnected] = useState(false);
+  const { connectToROS } = React.useContext(ROSContext);
 
   // 模拟设备连接状态检查
   useEffect(() => {
@@ -26,10 +36,13 @@ function LoginPage() {
       }
     };
     checkConnection();
+     connectToROS('ws://192.168.1.11:9090');
   }, []);
 
   const handleStart = () => {
     if (isDeviceConnected) {
+      // 连接到ROS服务器
+     
       navigate('/view'); // 修改为跳转到view页面
     }
   };
@@ -105,27 +118,105 @@ function LoginPage() {
 }
 
 function App() {
+  const [isConnected, setIsConnected] = useState(false);
+  const [batteryLevel, setBatteryLevel] = useState(100);
+  const batteryListenerRef = React.useRef<any>(null);
+
+  async function exampleServiceCall() {
+    try {
+      // 调用服务并等待响应
+      const promise = rosService.callService<
+        { a: number; b: number },
+        { success: boolean; message: string }
+      >("/add_two_ints", "metacam_node/AddTwoInts", { a: 33, b: 44 });
+
+      promise
+        .then((response: any) => {
+          console.log(response);
+          console.log("服务调用成功:", response, "33 + 44 = ", response.sum);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    } catch (error) {
+      console.error("服务调用失败:", error);
+    }
+  }
+
+  // 连接到ROS服务器
+  const connectToROS = (url: string) => {
+    // 使用rosService连接
+    rosService.connect(url);
+    
+    // 监听连接状态变化
+    rosService.onConnectionChange((status) => {
+      setIsConnected(status === "connected");
+      if (status === "connected") {
+        setupSubscribers();
+        exampleServiceCall();
+      } else if (status === "disconnected" || status === "error") {
+        cleanupSubscribers();
+      }
+    });
+  };
+
+  // 断开ROS连接
+  const disconnectROS = () => {
+    rosService.disconnect();
+  };
+
+  // 设置订阅
+  const setupSubscribers = () => {
+    cleanupSubscribers();
+
+    try {
+      // 订阅电池状态
+      batteryListenerRef.current = rosService.subscribeTopic(
+        '/battery_state',
+        'sensor_msgs/BatteryState',
+        (message: any) => {
+          setBatteryLevel(message.percentage * 100);
+        }
+      );
+    } catch (error) {
+      console.error('设置ROS订阅时出错:', error);
+    }
+  };
+
+  // 清理订阅
+  const cleanupSubscribers = () => {
+    if (batteryListenerRef.current) {
+      rosService.unsubscribeTopic(batteryListenerRef.current);
+      batteryListenerRef.current = null;
+    }
+  };
+
+  // 组件卸载时清理资源
+  useEffect(() => {
+    return () => {
+      cleanupSubscribers();
+      disconnectROS();
+    };
+  }, []);
+
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
-        {/* <Route path="/point-cloud" element={
-          <div className="App">
-            <PointCloud 
-              url="ws://192.168.1.11:9090"
-              topic="/lidar_out"
-              width={1200}
-              height={800}
-            />
-          </div>
-        } /> */}
-        <Route path="/view" element={<View />} />
-        <Route path="/download" element={<DownloadCenter />} />
-        <Route path="/projects" element={<ProjectManagement />} />
-        <Route path="/projects/:id" element={<ProjectDetail />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
+    <ROSContext.Provider value={{ 
+      isConnected, 
+      batteryLevel, 
+      connectToROS, 
+      disconnectROS 
+    }}>
+      <Router>
+        <Routes>
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/view" element={<View />} />
+          <Route path="/download" element={<DownloadCenter />} />
+          <Route path="/projects" element={<ProjectManagement />} />
+          <Route path="/projects/:id" element={<ProjectDetail />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Router>
+    </ROSContext.Provider>
   );
 }
 
