@@ -775,15 +775,6 @@ const PointCloud: React.FC<PointCloudProps> = ({
   return (
     <div className="pointcloud-container">
       {showDebugPanel && <DebugPanel debugInfo={debugInfo} />}
-      {
-        <div className="pointcloud-header">
-          <BatteryIndicator percentage={batteryLevel} />
-          <ConnectionControl
-            isConnected={isConnected}
-            onToggleConnection={handleToggleConnection}
-          />
-        </div>
-      }
       <div id={viewerId} ref={viewerRef} />
     </div>
   );

@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './View.css';
 import ConfigModal from './ConfigModal';
 import PointCloud from './PointCloud'; // 导入PointCloud组件
+import BatteryIndicator from './BatteryIndicator'; // 导入电池指示器组件
+import ConnectionControl from './ConnectionControl'; // 导入连接控制组件
+import { ROSContext } from '../App'; // 导入ROS上下文
 
 const View = () => {
   const navigate = useNavigate();
@@ -14,6 +17,25 @@ const View = () => {
   const [batteryLevel, setBatteryLevel] = useState(85);
   const [dataCollecting, setDataCollecting] = useState(true);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  
+  // 获取ROS连接状态和电池电量
+  const { isConnected, batteryLevel: rosBatteryLevel, disconnectROS, connectToROS } = useContext(ROSContext);
+  
+  // 使用ROS电池电量更新本地状态
+  useEffect(() => {
+    if (rosBatteryLevel !== undefined) {
+      setBatteryLevel(rosBatteryLevel);
+    }
+  }, [rosBatteryLevel]);
+  
+  // 处理连接控制
+  const handleToggleConnection = () => {
+    if (isConnected) {
+      disconnectROS();
+    } else {
+      connectToROS('ws://192.168.1.11:9090');
+    }
+  };
   
   // 添加系统状态
   const [systemStatus, setSystemStatus] = useState({
@@ -115,11 +137,18 @@ const View = () => {
               ))}
             </div>
           </div>
+          
+          {/* 添加电池指示器和连接控制组件 */}
           <div className="status-item">
-            <div className="battery-indicator">
-              <div className="battery-level" style={{ width: `${batteryLevel}%` }}></div>
-            </div>
+            <BatteryIndicator percentage={batteryLevel} />
           </div>
+          <div className="status-item">
+            <ConnectionControl
+              isConnected={isConnected}
+              onToggleConnection={handleToggleConnection}
+            />
+          </div>
+          
           <button className="settings-button" onClick={openConfigModal}>⚙️</button>
         </div>
       </div>
@@ -136,7 +165,7 @@ const View = () => {
             pointSize={config.pointSize}
             colorMode={config.colorMode}
             showDebugPanel={config.showDebugPanel} // 传递showDebugPanel属性
-             stlPath="/assets/8888.stl"
+            stlPath="/assets/8888.stl"
           />
         </div>
         
