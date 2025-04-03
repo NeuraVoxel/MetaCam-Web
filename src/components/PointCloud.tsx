@@ -97,6 +97,29 @@ const PointCloud: React.FC<PointCloudProps> = ({
     const ros = rosService.getROSInstance();
     if (!ros) return unsubscribe;
 
+    async function exampleServiceCall() {
+      try {
+        // 调用服务并等待响应
+        const promise = rosService.callService<
+          { a: number; b: number },
+          { success: boolean; message: string }
+        >("/add_two_ints", "metacam_node/AddTwoInts", { a: 33, b: 44 });
+
+        promise
+          .then((response: any) => {
+            console.log(response);
+            console.log("服务调用成功:", response, "33 + 44 = ", response.sum);
+          })
+          .catch((err) => {
+            console.error(err);
+          });
+      } catch (error) {
+        console.error("服务调用失败:", error);
+      }
+    }
+
+    exampleServiceCall();
+
     // 订阅点云话题
     ros.on(topic, (msg: any) => {
       if (rosService.isConnected()) {
@@ -238,7 +261,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
         isWorkerLoaded = false;
         worker.terminate();
         workerRef.current = null;
-        
+
         const workerScript = `
         function parsePointCloud(msg) {
       var buffer = new Uint8Array(msg.data).buffer;

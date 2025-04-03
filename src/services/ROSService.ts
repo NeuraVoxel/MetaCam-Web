@@ -33,7 +33,7 @@ class ROSService implements ROSServiceInterface {
     }
 
     this.updateStatus('connecting');
-    
+
     this.ros = new ROSLIB.Ros({
       url: url
     });
@@ -54,15 +54,15 @@ class ROSService implements ROSServiceInterface {
     });
   }
 
-   // 断开ROS连接
-   disconnect(): void {
+  // 断开ROS连接
+  disconnect(): void {
     if (this.ros) {
       // 取消所有活跃的话题订阅
       this.activeTopics.forEach(topic => {
         topic.unsubscribe();
       });
       this.activeTopics = [];
-      
+
       // 清空活跃服务列表
       this.activeServices.clear();
 
@@ -120,7 +120,7 @@ class ROSService implements ROSServiceInterface {
       ...options,
       ros: this.ros
     };
-    
+
     return new ROSLIB.TFClient(tfOptions);
   }
 
@@ -153,9 +153,9 @@ class ROSService implements ROSServiceInterface {
     return new Promise((resolve, reject) => {
       try {
         const service = this.createService<T, U>(serviceName, serviceType);
-        
+
         const serviceRequest = new ROSLIB.ServiceRequest(request);
-        
+
         service.callService(serviceRequest, (response: U) => {
           resolve(response);
         }, (error: any) => {
@@ -172,7 +172,7 @@ class ROSService implements ROSServiceInterface {
     this.connectionListeners.push(callback);
     // 立即通知当前状态
     callback(this.status);
-    
+
     // 返回取消监听的函数
     return () => {
       this.connectionListeners = this.connectionListeners.filter(listener => listener !== callback);
@@ -192,19 +192,3 @@ class ROSService implements ROSServiceInterface {
 const rosService = new ROSService();
 
 export default rosService;
-// 示例：调用ROS服务
-async function exampleServiceCall() {
-  try {
-    // 调用服务并等待响应
-    const response = await rosService.callService<{id: string}, {success: boolean, message: string}>(
-      '/example_service',
-      'std_srvs/SetBool',
-      { id: '123' }
-    );
-    console.log('服务调用成功:', response.success, response.message);
-  } catch (error) {
-    console.error('服务调用失败:', error);
-  }
-}
-
-exampleServiceCall();
