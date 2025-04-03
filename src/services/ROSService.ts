@@ -58,7 +58,7 @@ class ROSService implements ROSServiceInterface {
         topic.unsubscribe();
       });
       this.activeTopics = [];
-      
+
       this.ros.close();
       this.ros = null;
       this.updateStatus('disconnected');

@@ -1,18 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
-import ROSLIB from 'roslib';
-import * as ROS3D from 'ros3d';
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
-import BatteryIndicator from './BatteryIndicator';
-import ConnectionControl from './ConnectionControl';
+import React, { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
+import ROSLIB from "roslib";
+import * as ROS3D from "ros3d";
+import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
+import BatteryIndicator from "./BatteryIndicator";
+import ConnectionControl from "./ConnectionControl";
 import DebugPanel from "./DebugPanel";
-import './PointCloud.css';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import Stats from 'three/examples/jsm/libs/stats.module';
-import FixedLengthArray from '../utils/FixedLengthArray';
+import "./PointCloud.css";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import Stats from "three/examples/jsm/libs/stats.module";
+import FixedLengthArray from "../utils/FixedLengthArray";
 import FrameRateController from "../utils/FrameRateController";
 import FPSCounter from "../utils/FPSCounter";
-import rosService from '../services/ROSService';
+import rosService from "../services/ROSService";
 
 interface PointCloudProps {
   url: string;
@@ -30,19 +30,17 @@ interface PointCloudProps {
 const PointCloud: React.FC<PointCloudProps> = ({
   url,
   topic,
-  frameId = 'camera_init',
+  frameId = "camera_init",
   width = "100%",
   height = "100%",
-  batteryTopic = '/battery_state',
+  batteryTopic = "/battery_state",
   showDebugPanel = false,
-  stlPath = '/models/8888.stl' // 默认STL文件路径
+  stlPath = "/models/8888.stl", // 默认STL文件路径
 }) => {
   const viewerRef = useRef<HTMLDivElement>(null);
-  const viewerId = 'pointcloud-viewer';
+  const viewerId = "pointcloud-viewer";
   const [batteryLevel, setBatteryLevel] = useState<number>(100);
   const [isConnected, setIsConnected] = useState<boolean>(false);
-  // 移除 rosRef，使用 rosService 代替
-  const viewerRef3D = useRef<any>(null);
   const batteryListenerRef = useRef<ROSLIB.Topic | null>(null);
   const tfClientRef = useRef<ROSLIB.TFClient | null>(null);
   const animationFrameRef = useRef<number>(0);
@@ -56,8 +54,8 @@ const PointCloud: React.FC<PointCloudProps> = ({
     size: 0.1,
     color: 0xffffff,
     vertexColors: true, // 若启用需确认颜色数据存在
-    transparent: true,  // 移动端避免透明材质（可能引发性能问题）
-    alphaTest: 0.5      // 解决边缘锯齿
+    transparent: true, // 移动端避免透明材质（可能引发性能问题）
+    alphaTest: 0.5, // 解决边缘锯齿
   });
   let pointCloud = new THREE.Points(particlesGeometry, particlesMaterial);
 
@@ -71,7 +69,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
   let allColors: FixedLengthArray = new FixedLengthArray(maxPointNumber);
   const fpsController = new FrameRateController(25);
   const workerRef = useRef<Worker | null>(null);
-  let decodedWith: string = 'no worker';
+  let decodedWith: string = "no worker";
   let isWorkerLoaded: boolean = false;
   const [debugInfo, setDebugInfo] = useState({
     fps: 0,
@@ -80,43 +78,43 @@ const PointCloud: React.FC<PointCloudProps> = ({
     isWorkerLoaded: false,
     decodedWith: decodedWith,
     cameraPosition: { x: 0, y: 0, z: 0 },
-    controlsTarget: { x: 0, y: 0, z: 0 }
+    controlsTarget: { x: 0, y: 0, z: 0 },
   });
   const connectToROS = () => {
     // 使用 rosService 连接
     rosService.connect(url);
-    
+
     // 监听连接状态变化
     const unsubscribe = rosService.onConnectionChange((status) => {
-      setIsConnected(status === 'connected');
-      if (status === 'connected') {
+      setIsConnected(status === "connected");
+      if (status === "connected") {
         setupSubscribers();
-      } else if (status === 'disconnected' || status === 'error') {
+      } else if (status === "disconnected" || status === "error") {
         cleanupSubscribers();
       }
     });
-    
+
+    const ros = rosService.getROSInstance();
+    if (!ros) return unsubscribe;
+
     // 订阅点云话题
-    if (rosService.isConnected()) {
-      const ros = rosService.getROSInstance();
-      if (ros) {
-        ros.on(topic, (msg: any) => {
-          if (workerRef.current) {
-            workerRef.current.postMessage(msg);
-            decodedWith = 'worker: postMessage';
-          } else {
-            decodedWith = 'no worker';
-            const result = parsePointCloud(msg);
-    
-            allPoints.push(...result.points);
-            allColors.push(...result.colors);
-    
-            renderPoints(allPoints.array, allColors.array);
-          }
-        });
+    ros.on(topic, (msg: any) => {
+      if (rosService.isConnected()) {
+        if (workerRef.current) {
+          workerRef.current.postMessage(msg);
+          decodedWith = "worker: postMessage";
+        } else {
+          decodedWith = "no worker";
+          const result = parsePointCloud(msg);
+
+          allPoints.push(...result.points);
+          allColors.push(...result.colors);
+
+          renderPoints(allPoints.array, allColors.array);
+        }
       }
-    }
-    
+    });
+
     return unsubscribe;
   };
 
@@ -153,7 +151,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
       // 订阅电池状态
       batteryListenerRef.current = rosService.subscribeTopic(
         batteryTopic,
-        'sensor_msgs/BatteryState',
+        "sensor_msgs/BatteryState",
         (message: any) => {
           setBatteryLevel(message.percentage * 100);
         }
@@ -167,15 +165,16 @@ const PointCloud: React.FC<PointCloudProps> = ({
       });
 
       // 使用ROS3D处理点云数据
-      if (rosService.getROSInstance()) {
+      const ros = rosService.getROSInstance();
+      if (ros) {
         new ROS3D.PointCloud2({
-          ros: rosService.getROSInstance()!,
+          ros: ros!,
           topic: topic,
           tfClient: tfClientRef.current,
         });
       }
     } catch (error) {
-      console.error('设置ROS订阅时出错:', error);
+      console.error("设置ROS订阅时出错:", error);
     }
   };
 
@@ -189,110 +188,44 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
   const renderPoints = (points: any, colors: any) => {
     if (points.length === 0) {
-      console.warn('No valid points found in point cloud');
+      console.warn("No valid points found in point cloud");
       return;
     }
 
-    particlesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
-    particlesGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    particlesGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(points, 3)
+    );
+    particlesGeometry.setAttribute(
+      "color",
+      new THREE.Float32BufferAttribute(colors, 3)
+    );
 
     particlesGeometry.attributes.position.needsUpdate = true;
     particlesGeometry.attributes.color.needsUpdate = true;
-  }
+  };
 
   useEffect(() => {
     if (!viewerRef.current) return;
-    let worker;
     // Initialize Web Worker
     if (isWorkerSupported()) {
       console.info("当前环境支持 Web Worker");
-      // let worker = new Worker(
+
+      let worker = new Worker(
+        new URL("../workers/pointCloudParser.worker.ts", import.meta.url)
+      );
+
+      // console.log(
       //   new URL("../workers/pointCloudParser.worker.ts", import.meta.url)
       // );
 
-      // console.log(new URL("../workers/pointCloudParser.worker.ts", import.meta.url));
-
-      // worker.onmessage = (e: MessageEvent) => {
-      //   if (e.data.type === "READY") {
-      //     console.log("Worker 加载成功");
-      //     isWorkerLoaded = true;
-      //     workerRef.current = worker;
-      //   }else {
-      //     decodedWith = 'worker: onmessage';
-      //     const { points, colors } = e.data;
-      //     allPoints.push(...points);
-      //     allColors.push(...colors);
-      //     renderPoints(allPoints.array, allColors.array);
-      //   }
-      // };
-
-      // worker.onerror = (event) => {
-      //   console.error("Worker 加载失败:", event);
-      //   isWorkerLoaded = false;
-      //   worker.terminate();
-      //   workerRef.current = null;
-      // }
-
-      const workerScript = `
-      function parsePointCloud(msg) {
-    console.log(msg);
-    var buffer = new Uint8Array(msg.data).buffer;
-    var dataView = new DataView(buffer);
-
-    var points = [];
-    var colors = [];
-
-    for (let i = 0; i < msg.width; i++) {
-        var pointOffset = i * msg.point_step;
-
-        msg.fields.forEach((field) => {
-            var byteOffset = pointOffset + field.offset;
-            var name = field.name;
-
-            switch (field.datatype) {
-                case 7:
-                    if (name === 'x' || name === 'y' || name === 'z') {
-                        points.push(dataView.getFloat32(byteOffset, !msg.is_bigendian));
-                    } else if (name === 'rgb') {
-                        var rgbInt = dataView.getUint32(byteOffset, !msg.is_bigendian);
-                        var rgb = {
-                            r: ((rgbInt >> 16) & 0xff) / 255,
-                            g: ((rgbInt >> 8) & 0xff) / 255,
-                            b: (rgbInt & 0xff) / 255
-                        };
-                        colors.push(rgb.r, rgb.g, rgb.b);
-                    }
-                    break;
-            }
-        });
-    }
-    console.log('parse ok');
-    return {
-        points,
-        colors
-    };
-}
-
-self.onmessage = (e) => {
-    const result = parsePointCloud(e.data);
-    self.postMessage(result);
-};
-
-self.postMessage({
-    type: 'READY',
-}); 
-    `;
-
-      const blob = new Blob([workerScript], { type: 'application/javascript' });
-      const worker2 = new Worker(URL.createObjectURL(blob));
-
-      worker2.onmessage = (e: MessageEvent) => {
+      worker.onmessage = (e: MessageEvent) => {
         if (e.data.type === "READY") {
-          console.log("Worker2 加载成功");
+          console.log("Worker 加载成功");
           isWorkerLoaded = true;
-          workerRef.current = worker2;
+          workerRef.current = worker;
         } else {
-          decodedWith = 'worker: onmessage';
+          decodedWith = "worker1: onmessage";
           const { points, colors } = e.data;
           allPoints.push(...points);
           allColors.push(...colors);
@@ -300,15 +233,89 @@ self.postMessage({
         }
       };
 
-      worker2.onerror = (event) => {
-        console.error("Worker2 加载失败:", event);
+      worker.onerror = (event) => {
+        console.error("Worker 加载失败:", event);
         isWorkerLoaded = false;
-        worker2.terminate();
+        worker.terminate();
         workerRef.current = null;
+        
+        const workerScript = `
+        function parsePointCloud(msg) {
+      var buffer = new Uint8Array(msg.data).buffer;
+      var dataView = new DataView(buffer);
+  
+      var points = [];
+      var colors = [];
+  
+      for (let i = 0; i < msg.width; i++) {
+          var pointOffset = i * msg.point_step;
+  
+          msg.fields.forEach((field) => {
+              var byteOffset = pointOffset + field.offset;
+              var name = field.name;
+  
+              switch (field.datatype) {
+                  case 7:
+                      if (name === 'x' || name === 'y' || name === 'z') {
+                          points.push(dataView.getFloat32(byteOffset, !msg.is_bigendian));
+                      } else if (name === 'rgb') {
+                          var rgbInt = dataView.getUint32(byteOffset, !msg.is_bigendian);
+                          var rgb = {
+                              r: ((rgbInt >> 16) & 0xff) / 255,
+                              g: ((rgbInt >> 8) & 0xff) / 255,
+                              b: (rgbInt & 0xff) / 255
+                          };
+                          colors.push(rgb.r, rgb.g, rgb.b);
+                      }
+                      break;
+              }
+          });
       }
+      return {
+          points,
+          colors
+      };
+  }
+  
+  self.onmessage = (e) => {
+      const result = parsePointCloud(e.data);
+      self.postMessage(result);
+  };
+  
+  self.postMessage({
+      type: 'READY',
+  }); 
+      `;
+
+        const blob = new Blob([workerScript], {
+          type: "application/javascript",
+        });
+        const worker2 = new Worker(URL.createObjectURL(blob));
+
+        worker2.onmessage = (e: MessageEvent) => {
+          if (e.data.type === "READY") {
+            console.log("Worker2 加载成功");
+            isWorkerLoaded = true;
+            workerRef.current = worker2;
+          } else {
+            decodedWith = "worker2: onmessage";
+            const { points, colors } = e.data;
+            allPoints.push(...points);
+            allColors.push(...colors);
+            renderPoints(allPoints.array, allColors.array);
+          }
+        };
+
+        worker2.onerror = (event) => {
+          console.error("Worker2 加载失败:", event);
+          isWorkerLoaded = false;
+          worker2.terminate();
+          workerRef.current = null;
+        };
+      };
     } else {
       console.error("当前环境不支持 Web Worker");
-      decodedWith = 'no worker';
+      decodedWith = "no worker";
     }
 
     // 初始连接
@@ -319,7 +326,7 @@ self.postMessage({
       unsubscribeROS(); // 取消ROS连接状态监听
       cleanupSubscribers();
       rosService.disconnect();
-      
+
       if (viewerRef.current) {
         while (viewerRef.current.firstChild) {
           viewerRef.current.removeChild(viewerRef.current.firstChild);
@@ -349,7 +356,7 @@ self.postMessage({
       scene = new THREE.Scene();
     }
     scene.background = new THREE.Color(0x000000);
-    
+
     (window as any).scene = scene;
 
     // 2. 创建透视相机（参数：视场角、宽高比、近裁剪面、远裁剪面）
@@ -379,7 +386,7 @@ self.postMessage({
     if (!renderer) {
       renderer = new THREE.WebGLRenderer({
         antialias: false,
-        powerPreference: "low-power"
+        powerPreference: "low-power",
       });
     }
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -388,8 +395,8 @@ self.postMessage({
 
     const context = renderer.getContext();
     console.log(context.getParameter(context.VERSION));
-    if (context.getParameter(context.VERSION).includes('WebGL 1.0')) {
-      console.warn('降级到 WebGL 1.0 模式运行');
+    if (context.getParameter(context.VERSION).includes("WebGL 1.0")) {
+      console.warn("降级到 WebGL 1.0 模式运行");
     }
 
     // 创建坐标轴辅助器，长度设为 5
@@ -406,24 +413,24 @@ self.postMessage({
       controls.mouseButtons = {
         LEFT: THREE.MOUSE.ROTATE,
         MIDDLE: THREE.MOUSE.PAN,
-        RIGHT: THREE.MOUSE.DOLLY
+        RIGHT: THREE.MOUSE.DOLLY,
       };
 
       // 关键参数配置
-      controls.enableDamping = true;     // 启用阻尼惯性（提升操作流畅性）[1,6](@ref)
-      controls.dampingFactor = 0.05;    // 阻尼强度（值越小惯性越明显）
-      controls.enableZoom = true;       // 允许缩放
-      controls.zoomSpeed = 1.5;         // 缩放灵敏度
-      controls.enableRotate = true;     // 允许旋转
-      controls.rotateSpeed = 0.8;       // 旋转灵敏度
-      controls.enablePan = true;        // 允许平移
-      controls.panSpeed = 0.5;          // 平移速度
+      controls.enableDamping = true; // 启用阻尼惯性（提升操作流畅性）[1,6](@ref)
+      controls.dampingFactor = 0.05; // 阻尼强度（值越小惯性越明显）
+      controls.enableZoom = true; // 允许缩放
+      controls.zoomSpeed = 1.5; // 缩放灵敏度
+      controls.enableRotate = true; // 允许旋转
+      controls.rotateSpeed = 0.8; // 旋转灵敏度
+      controls.enablePan = true; // 允许平移
+      controls.panSpeed = 0.5; // 平移速度
       controls.screenSpacePanning = false; // 禁用屏幕空间平移（更适合 3D 场景）[6](@ref)
     }
 
     // 添加物体
     const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-    const material = new THREE.MeshBasicMaterial({ color: 0xCDCDCD });
+    const material = new THREE.MeshBasicMaterial({ color: 0xcdcdcd });
     const cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
 
@@ -447,7 +454,7 @@ self.postMessage({
             const material = new THREE.MeshPhongMaterial({
               color: 0x00aaff,
               specular: 0x111111,
-              shininess: 200
+              shininess: 200,
             });
 
             // 创建网格
@@ -457,23 +464,27 @@ self.postMessage({
             mesh.scale.set(0.01, 0.01, 0.01);
 
             // 将模型放置在坐标系原点
-            mesh.position.set(-center.x * mesh.scale.x, -center.y * mesh.scale.y, -center.z * mesh.scale.z);
+            mesh.position.set(
+              -center.x * mesh.scale.x,
+              -center.y * mesh.scale.y,
+              -center.z * mesh.scale.z
+            );
 
             // 添加到场景
             scene.add(mesh);
 
             // 保存模型引用
             stlModelRef.current = mesh;
-            mesh.name = 'STLModel';
+            mesh.name = "STLModel";
 
-            console.log('STL模型加载成功，已缩小100倍并放置在坐标系原点');
+            console.log("STL模型加载成功，已缩小100倍并放置在坐标系原点");
           }
         },
         (xhr) => {
-          console.log((xhr.loaded / xhr.total) * 100 + '% 已加载');
+          console.log((xhr.loaded / xhr.total) * 100 + "% 已加载");
         },
         (error) => {
-          console.error('STL加载错误:', error);
+          console.error("STL加载错误:", error);
         }
       );
     };
@@ -481,7 +492,7 @@ self.postMessage({
     // 创建sin函数轨迹线
     const createTrajectory = () => {
       // 定义轨迹参数
-      const length = 100;  // 轨迹长度
+      const length = 100; // 轨迹长度
       const points = [];
       const amplitude = 5; // sin波振幅
       const frequency = 0.2; // sin波频率
@@ -505,7 +516,7 @@ self.postMessage({
       // 创建轨迹线材质
       const material = new THREE.LineBasicMaterial({
         color: 0xff0000,
-        linewidth: 2
+        linewidth: 2,
       });
 
       // 创建轨迹线
@@ -516,7 +527,7 @@ self.postMessage({
 
       // 保存轨迹线引用和曲线
       trajectoryRef.current = trajectoryLine;
-      
+
       return { curve, trajectoryLine };
     };
 
@@ -575,13 +586,19 @@ self.postMessage({
 
         // 随机初始颜色
         colors.push(
-          Math.random(),   // R
-          Math.random(),   // G
-          Math.random()    // B
+          Math.random(), // R
+          Math.random(), // G
+          Math.random() // B
         );
       }
-      particlesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
-      particlesGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      particlesGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(points, 3)
+      );
+      particlesGeometry.setAttribute(
+        "color",
+        new THREE.Float32BufferAttribute(colors, 3)
+      );
       particlesGeometry.attributes.position.needsUpdate = true;
       particlesGeometry.attributes.color.needsUpdate = true;
     };
@@ -599,20 +616,19 @@ self.postMessage({
       } else {
         camera.updateProjectionMatrix();
       }
-
     };
     window.addEventListener("resize", handleResize);
 
     // Update the animation loop to include debug info
     const fpsCounter = new FPSCounter();
-    
+
     // 创建轨迹曲线并保存引用
     const { curve } = createTrajectory();
-    
+
     // 动画参数
     let progress = 0; // 轨迹进度，0-1之间
     const speed = 0.00005; // 移动速度
-    
+
     // 相机跟随参数
     const cameraOffset = new THREE.Vector3(0, 5, -10); // 相机相对于模型的偏移量
 
@@ -620,19 +636,19 @@ self.postMessage({
       stats.begin();
 
       const currentFPS = fpsCounter.update();
-      
+
       // 更新STL模型位置和相机位置
       if (stlModelRef.current && curve) {
         // 更新进度
         progress += speed * deltaTime;
         if (progress > 1) progress = 0; // 循环移动
-        
+
         // 获取当前轨迹点位置
         const position = curve.getPointAt(progress);
-        
+
         // 更新模型位置
         stlModelRef.current.position.copy(position);
-        
+
         // 计算切线方向（使模型朝向运动方向）
         const tangent = curve.getTangentAt(progress);
         const lookAtPoint = new THREE.Vector3(
@@ -641,19 +657,19 @@ self.postMessage({
           position.z + tangent.z
         );
         stlModelRef.current.lookAt(lookAtPoint);
-        
+
         // // 更新相机位置，使其跟随模型
         // // 创建一个基于模型朝向的本地坐标系
         // const modelDirection = new THREE.Vector3().subVectors(lookAtPoint, position).normalize();
         // const modelRight = new THREE.Vector3(0, 1, 0).cross(modelDirection).normalize();
         // const modelUp = new THREE.Vector3().crossVectors(modelDirection, modelRight).normalize();
-        
+
         // // 计算相机位置（模型后方偏上）
         // const cameraPosition = new THREE.Vector3()
         //   .copy(position)
         //   .add(modelDirection.clone().multiplyScalar(-cameraOffset.z)) // 后方
         //   .add(modelUp.clone().multiplyScalar(cameraOffset.y)); // 上方
-        
+
         // // 更新相机位置和朝向
         // camera.position.copy(cameraPosition);
         // camera.lookAt(position); // 相机始终看向模型
@@ -669,13 +685,13 @@ self.postMessage({
         cameraPosition: {
           x: camera.position.x,
           y: camera.position.y,
-          z: camera.position.z
+          z: camera.position.z,
         },
         controlsTarget: {
           x: controls.target.x,
           y: controls.target.y,
-          z: controls.target.z
-        }
+          z: controls.target.z,
+        },
       });
 
       controls.update();
@@ -731,7 +747,7 @@ self.postMessage({
               const rgb = {
                 r: ((rgbInt >> 16) & 0xff) / 255,
                 g: ((rgbInt >> 8) & 0xff) / 255,
-                b: (rgbInt & 0xff) / 255
+                b: (rgbInt & 0xff) / 255,
               };
               colors.push(rgb.r, rgb.g, rgb.b);
             }
@@ -752,19 +768,19 @@ self.postMessage({
 
   const isWorkerSupported = (): boolean => {
     return typeof window.Worker !== "undefined";
-  }
+  };
 
   return (
     <div className="pointcloud-container">
       {showDebugPanel && <DebugPanel debugInfo={debugInfo} />}
       {
-        // <div className="pointcloud-header">
-        //   <BatteryIndicator percentage={batteryLevel} />
-        //   <ConnectionControl
-        //     isConnected={isConnected}
-        //     onToggleConnection={handleToggleConnection}
-        //   />
-        // </div>
+        <div className="pointcloud-header">
+          <BatteryIndicator percentage={batteryLevel} />
+          <ConnectionControl
+            isConnected={isConnected}
+            onToggleConnection={handleToggleConnection}
+          />
+        </div>
       }
       <div id={viewerId} ref={viewerRef} />
     </div>
