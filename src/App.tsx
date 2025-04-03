@@ -24,25 +24,20 @@ function LoginPage() {
 
   // 模拟设备连接状态检查
   useEffect(() => {
-    // 这里应该是实际的设备连接检查逻辑
-    const checkConnection = async () => {
-      try {
-        // 替换为实际的连接检查
-        const connected = true; // 默认为未连接
-        setIsDeviceConnected(connected);
-      } catch (error) {
-        console.error('检查设备连接失败:', error);
-        setIsDeviceConnected(false);
-      }
-    };
-    checkConnection();
      connectToROS('ws://192.168.1.11:9090');
+    // 监听ROS连接状态变化
+    const unsubscribe = rosService.onConnectionChange((status) => {
+      setIsDeviceConnected(status === 'connected');
+    });
+    // 清理函数
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const handleStart = () => {
     if (isDeviceConnected) {
       // 连接到ROS服务器
-     
       navigate('/view'); // 修改为跳转到view页面
     }
   };
