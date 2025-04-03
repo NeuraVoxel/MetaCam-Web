@@ -1,0 +1,144 @@
+import ROSLIB from 'roslib';
+
+// 定义ROS连接状态类型
+export type ROSConnectionStatus = 'connected' | 'disconnected' | 'error' | 'connecting';
+
+// 定义ROS服务接口
+export interface ROSServiceInterface {
+  connect: (url: string) => void;
+  disconnect: () => void;
+  isConnected: () => boolean;
+  getROSInstance: () => ROSLIB.Ros | null;
+  subscribeTopic: <T>(topicName: string, messageType: string, callback: (message: T) => void) => ROSLIB.Topic;
+  unsubscribeTopic: (topic: ROSLIB.Topic) => void;
+  createTFClient: (options: ROSLIB.TFClientOptions) => ROSLIB.TFClient;
+  onConnectionChange: (callback: (status: ROSConnectionStatus) => void) => () => void;
+}
+
+class ROSService implements ROSServiceInterface {
+  private ros: ROSLIB.Ros | null = null;
+  private connectionListeners: ((status: ROSConnectionStatus) => void)[] = [];
+  private status: ROSConnectionStatus = 'disconnected';
+  private activeTopics: ROSLIB.Topic[] = [];
+
+  // 连接到ROS服务器
+  connect(url: string): void {
+    // 如果已经连接，先断开
+    if (this.ros) {
+      this.disconnect();
+    }
+
+    this.updateStatus('connecting');
+    
+    this.ros = new ROSLIB.Ros({
+      url: url
+    });
+
+    this.ros.on('connection', () => {
+      console.log('Connected to ROS websocket server.');
+      this.updateStatus('connected');
+    });
+
+    this.ros.on('error', (error: Error) => {
+      console.error('Error connecting to ROS websocket server:', error);
+      this.updateStatus('error');
+    });
+
+    this.ros.on('close', () => {
+      console.log('Connection to ROS websocket server closed.');
+      this.updateStatus('disconnected');
+    });
+  }
+
+  // 断开ROS连接
+  disconnect(): void {
+    if (this.ros) {
+      // 取消所有活跃的话题订阅
+      this.activeTopics.forEach(topic => {
+        topic.unsubscribe();
+      });
+      this.activeTopics = [];
+      
+      this.ros.close();
+      this.ros = null;
+      this.updateStatus('disconnected');
+    }
+  }
+
+  // 检查是否已连接
+  isConnected(): boolean {
+    return this.status === 'connected';
+  }
+
+  // 获取ROS实例
+  getROSInstance(): ROSLIB.Ros | null {
+    return this.ros;
+  }
+
+  // 订阅话题
+  subscribeTopic<T>(topicName: string, messageType: string, callback: (message: T) => void): ROSLIB.Topic {
+    if (!this.ros) {
+      throw new Error('ROS not connected. Please connect first.');
+    }
+
+    const topic = new ROSLIB.Topic({
+      ros: this.ros,
+      name: topicName,
+      messageType: messageType
+    });
+
+    topic.subscribe((message: T) => {
+      callback(message);
+    });
+
+    this.activeTopics.push(topic);
+    return topic;
+  }
+
+  // 取消订阅话题
+  unsubscribeTopic(topic: ROSLIB.Topic): void {
+    topic.unsubscribe();
+    this.activeTopics = this.activeTopics.filter(t => t !== topic);
+  }
+
+  // 创建TF客户端
+  // Create TF client
+  createTFClient(options: Omit<ROSLIB.TFClientOptions, 'ros'>): ROSLIB.TFClient {
+    if (!this.ros) {
+      throw new Error('ROS not connected. Please connect first.');
+    }
+
+    // Add the ros instance to the options
+    const tfOptions: ROSLIB.TFClientOptions = {
+      ...options,
+      ros: this.ros
+    };
+    
+    return new ROSLIB.TFClient(tfOptions);
+  }
+
+  // 注册连接状态变化监听器
+  onConnectionChange(callback: (status: ROSConnectionStatus) => void): () => void {
+    this.connectionListeners.push(callback);
+    // 立即通知当前状态
+    callback(this.status);
+    
+    // 返回取消监听的函数
+    return () => {
+      this.connectionListeners = this.connectionListeners.filter(listener => listener !== callback);
+    };
+  }
+
+  // 更新连接状态并通知所有监听器
+  private updateStatus(status: ROSConnectionStatus): void {
+    this.status = status;
+    this.connectionListeners.forEach(listener => {
+      listener(status);
+    });
+  }
+}
+
+// 创建单例实例
+const rosService = new ROSService();
+
+export default rosService;

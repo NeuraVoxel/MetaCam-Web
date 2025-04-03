@@ -12,6 +12,7 @@ import Stats from 'three/examples/jsm/libs/stats.module';
 import FixedLengthArray from '../utils/FixedLengthArray';
 import FrameRateController from "../utils/FrameRateController";
 import FPSCounter from "../utils/FPSCounter";
+import rosService from '../services/ROSService';
 
 interface PointCloudProps {
   url: string;
@@ -40,7 +41,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
   const viewerId = 'pointcloud-viewer';
   const [batteryLevel, setBatteryLevel] = useState<number>(100);
   const [isConnected, setIsConnected] = useState<boolean>(false);
-  const rosRef = useRef<ROSLIB.Ros | null>(null);
+  // 移除 rosRef，使用 rosService 代替
   const viewerRef3D = useRef<any>(null);
   const batteryListenerRef = useRef<ROSLIB.Topic | null>(null);
   const tfClientRef = useRef<ROSLIB.TFClient | null>(null);
@@ -82,54 +83,46 @@ const PointCloud: React.FC<PointCloudProps> = ({
     controlsTarget: { x: 0, y: 0, z: 0 }
   });
   const connectToROS = () => {
-    if (rosRef.current) {
-      rosRef.current.close();
-    }
-
-    const ros = new ROSLIB.Ros({
-      url: url
-    });
-
-    ros.on('connection', () => {
-      console.log('Connected to websocket server.');
-      setIsConnected(true);
-      setupSubscribers(ros);
-    });
-
-    ros.on('error', (error: Error) => {
-      console.error('Error connecting to websocket server:', error);
-      setIsConnected(false);
-    });
-
-    ros.on('close', () => {
-      console.log('Connection to websocket server closed.');
-      setIsConnected(false);
-      cleanupSubscribers();
-    });
-
-
-    ros.on(topic, (msg: any) => {
-      // console.log(workerRef.current);
-      if (workerRef.current) {
-        workerRef.current.postMessage(msg);
-        decodedWith = 'worker: postMessage';
-      } else {
-        decodedWith = 'no worker';
-        const result = parsePointCloud(msg);
-
-        allPoints.push(...result.points);
-        allColors.push(...result.colors);
-
-        renderPoints(allPoints.array, allColors.array);
+    // 使用 rosService 连接
+    rosService.connect(url);
+    
+    // 监听连接状态变化
+    const unsubscribe = rosService.onConnectionChange((status) => {
+      setIsConnected(status === 'connected');
+      if (status === 'connected') {
+        setupSubscribers();
+      } else if (status === 'disconnected' || status === 'error') {
+        cleanupSubscribers();
       }
-    })
-
-    rosRef.current = ros;
+    });
+    
+    // 订阅点云话题
+    if (rosService.isConnected()) {
+      const ros = rosService.getROSInstance();
+      if (ros) {
+        ros.on(topic, (msg: any) => {
+          if (workerRef.current) {
+            workerRef.current.postMessage(msg);
+            decodedWith = 'worker: postMessage';
+          } else {
+            decodedWith = 'no worker';
+            const result = parsePointCloud(msg);
+    
+            allPoints.push(...result.points);
+            allColors.push(...result.colors);
+    
+            renderPoints(allPoints.array, allColors.array);
+          }
+        });
+      }
+    }
+    
+    return unsubscribe;
   };
 
   const cleanupSubscribers = () => {
     if (batteryListenerRef.current) {
-      batteryListenerRef.current.unsubscribe();
+      rosService.unsubscribeTopic(batteryListenerRef.current);
       batteryListenerRef.current = null;
     }
 
@@ -152,48 +145,43 @@ const PointCloud: React.FC<PointCloudProps> = ({
     }
   };
 
-  const setupSubscribers = (ros: ROSLIB.Ros) => {
+  const setupSubscribers = () => {
     // 清理旧的订阅
     cleanupSubscribers();
 
-    // 订阅电池状态
-    const batteryListener = new ROSLIB.Topic({
-      ros: ros,
-      name: batteryTopic,
-      messageType: 'sensor_msgs/BatteryState'
-    });
+    try {
+      // 订阅电池状态
+      batteryListenerRef.current = rosService.subscribeTopic(
+        batteryTopic,
+        'sensor_msgs/BatteryState',
+        (message: any) => {
+          setBatteryLevel(message.percentage * 100);
+        }
+      );
 
-    batteryListener.subscribe((message: any) => {
-      setBatteryLevel(message.percentage * 100);
-    });
+      // 设置TF客户端
+      tfClientRef.current = rosService.createTFClient({
+        fixedFrame: frameId,
+        angularThres: 0.01,
+        transThres: 0.01,
+      });
 
-    batteryListenerRef.current = batteryListener;
-
-    // 设置TF客户端
-    const tfClient = new ROSLIB.TFClient({
-      ros: ros,
-      fixedFrame: frameId,
-      angularThres: 0.01,
-      transThres: 0.01,
-    });
-
-    tfClientRef.current = tfClient;
-
-    new ROS3D.PointCloud2({
-      ros: rosRef.current,
-      topic: topic,
-      tfClient: tfClientRef.current,
-      // rootObject: viewerRef3D.current.scene,
-    });
-  };
-
-  const isWorkerSupported = (): boolean => {
-    return typeof window.Worker !== "undefined";
+      // 使用ROS3D处理点云数据
+      if (rosService.getROSInstance()) {
+        new ROS3D.PointCloud2({
+          ros: rosService.getROSInstance()!,
+          topic: topic,
+          tfClient: tfClientRef.current,
+        });
+      }
+    } catch (error) {
+      console.error('设置ROS订阅时出错:', error);
+    }
   };
 
   const handleToggleConnection = () => {
-    if (isConnected && rosRef.current) {
-      rosRef.current.close();
+    if (isConnected) {
+      rosService.disconnect();
     } else {
       connectToROS();
     }
@@ -324,14 +312,14 @@ self.postMessage({
     }
 
     // 初始连接
-    connectToROS();
+    const unsubscribeROS = connectToROS();
 
     // 清理函数
     return () => {
+      unsubscribeROS(); // 取消ROS连接状态监听
       cleanupSubscribers();
-      if (rosRef.current) {
-        rosRef.current.close();
-      }
+      rosService.disconnect();
+      
       if (viewerRef.current) {
         while (viewerRef.current.firstChild) {
           viewerRef.current.removeChild(viewerRef.current.firstChild);
@@ -761,6 +749,10 @@ self.postMessage({
       colors,
     };
   };
+
+  const isWorkerSupported = (): boolean => {
+    return typeof window.Worker !== "undefined";
+  }
 
   return (
     <div className="pointcloud-container">
