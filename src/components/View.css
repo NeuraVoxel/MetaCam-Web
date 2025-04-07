@@ -249,9 +249,10 @@
 .panorama-image {
   width: 100%;
   height: 100%;
-  background-image: url('/public/assets/panorama-placeholder.png');
+  /* background-image: url('/public/assets/panorama-placeholder.png'); */
   background-size: cover;
   background-position: center;
+  /* background-color: #4CAF50; */
 }
 
 /* 右侧功能按钮 */

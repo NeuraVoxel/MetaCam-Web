@@ -97,8 +97,6 @@ const PointCloud: React.FC<PointCloudProps> = ({
     const ros = rosService.getROSInstance();
     if (!ros) return unsubscribe;
 
-   
-
     // 订阅点云话题
     ros.on(topic, (msg: any) => {
       if (rosService.isConnected()) {
@@ -349,7 +347,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
     stats.dom.style.position = "absolute";
     stats.dom.style.top = "0px";
-    viewerRef.current.appendChild(stats.dom);
+    // viewerRef.current.appendChild(stats.dom);
 
     console.log(THREE.REVISION);
 
@@ -367,7 +365,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
         75,
         window.innerWidth / window.innerHeight,
         0.1,
-        1000
+        150000
       );
 
       // const aspect = window.innerWidth / window.innerHeight;
@@ -384,6 +382,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     camera.up.set(0, 1, 0); // 默认是 (0, 1, 0) 即 Y 轴向上
     camera.lookAt(0, 0, 0);
     camera.position.set(0, 20, -50);
+
     // 3. 创建渲染器
     if (!renderer) {
       renderer = new THREE.WebGLRenderer({

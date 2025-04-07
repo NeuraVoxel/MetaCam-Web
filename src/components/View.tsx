@@ -22,11 +22,14 @@ const View = () => {
 
   const { disconnectROS, connectToROS } = useContext(ROSContext);
 
-  // 添加电池状态订阅引用
+  // 添加引用
   const batteryListenerRef = useRef<ROSLIB.Topic | null>(null);
   const storageListenerRef = useRef<ROSLIB.Topic | null>(null);
+  const elapsedTimeListenerRef = useRef<ROSLIB.Topic | null>(null);
+  const keyframeImageListenerRef = useRef<ROSLIB.Topic | null>(null);
+  const keyframeCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  // 设置电池状态订阅
+  // 设置订阅
   const setupSubscriber = () => {
     cleanupSubscriber();
 
@@ -52,13 +55,51 @@ const View = () => {
           }
         );
 
-        // 订阅U盘内存
-        storageListenerRef.current = rosService.subscribeTopic(
+        // 订阅任务时长
+        elapsedTimeListenerRef.current = rosService.subscribeTopic(
           "/project_duration",
           "std_msgs/Float32",
           (message: any) => {
-            console.log("收到任务时长:", message);
+            // console.log("收到任务时长:", message);
             setElapsedTime(`${message.data.toFixed(2)}h`);
+          }
+        );
+
+        // 订阅缩略图 keyframe image
+        keyframeImageListenerRef.current = rosService.subscribeTopic(
+          "/camera/right/jpeg",
+          "sensor_msgs/CompressedImage",
+          (message: any) => {
+            // console.log("收到缩略图:", message);
+            // console.log(keyframeCanvasRef);
+            if (keyframeCanvasRef.current) {
+              const canvas = keyframeCanvasRef.current as HTMLCanvasElement;
+              // 检查元素是否存在
+              if (!canvas) {
+                throw new Error('Canvas element with id "panorama" not found.');
+              }
+
+              // 检查是否为 Canvas 元素
+              if (!(canvas instanceof HTMLCanvasElement)) {
+                throw new Error('Element with id "panorama" is not a canvas.');
+              }
+
+              try {
+                if (message.format == "jpeg" || message.format == "png") {
+                  const image = new Image();
+                  image.src =
+                    "data:image/" + message.format + ";base64," + message.data;
+                  image.onload = function () {
+                    canvas.width = image.width;
+                    canvas.height = image.height;
+                    const ctx = canvas.getContext("2d");
+                    ctx?.drawImage(image, 0, 0, image.width, image.height);
+                  };
+                }
+              } catch (error) {
+                console.error("Error processing keyframe image:", error);
+              }
+            }
           }
         );
       }
@@ -67,11 +108,26 @@ const View = () => {
     }
   };
 
-  // 清理电池状态订阅
+  // 清理订阅
   const cleanupSubscriber = () => {
     if (batteryListenerRef.current) {
       rosService.unsubscribeTopic(batteryListenerRef.current);
       batteryListenerRef.current = null;
+    }
+
+    if (storageListenerRef.current) {
+      rosService.unsubscribeTopic(storageListenerRef.current);
+      storageListenerRef.current = null;
+    }
+
+    if (elapsedTimeListenerRef.current) {
+      rosService.unsubscribeTopic(elapsedTimeListenerRef.current);
+      elapsedTimeListenerRef.current = null;
+    }
+
+    if (keyframeImageListenerRef.current) {
+      rosService.unsubscribeTopic(keyframeImageListenerRef.current);
+      keyframeImageListenerRef.current = null;
     }
   };
 
@@ -267,7 +323,10 @@ const View = () => {
         {/* 全景预览窗口 */}
         <div className="panorama-preview">
           <button className="close-preview">✕</button>
-          <div className="panorama-image">{/* 全景图像将在这里显示 */}</div>
+          {<canvas className="panorama-image" ref={keyframeCanvasRef}></canvas>}
+          {/* <div className="panorama-image">
+            {<canvas id="panorama"></canvas>}
+          </div> */}
         </div>
 
         {/* 右侧功能按钮 */}
