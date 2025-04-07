@@ -24,10 +24,11 @@ const View = () => {
 
   // 添加电池状态订阅引用
   const batteryListenerRef = useRef<ROSLIB.Topic | null>(null);
+  const storageListenerRef = useRef<ROSLIB.Topic | null>(null);
 
   // 设置电池状态订阅
-  const setupBatterySubscriber = () => {
-    cleanupBatterySubscriber();
+  const setupSubscriber = () => {
+    cleanupSubscriber();
 
     try {
       if (rosService.isConnected()) {
@@ -40,6 +41,16 @@ const View = () => {
             setBatteryLevel(message.percentage * 100);
           }
         );
+
+        // 订阅U盘内存
+        storageListenerRef.current = rosService.subscribeTopic(
+          "/storage",
+          "std_msgs/String",
+          (message: any) => {
+            // console.log("收到U盘内存:", message);
+            setStorageSpace(message.data);
+          }
+        );
       }
     } catch (error) {
       console.error("设置电池状态订阅时出错:", error);
@@ -47,7 +58,7 @@ const View = () => {
   };
 
   // 清理电池状态订阅
-  const cleanupBatterySubscriber = () => {
+  const cleanupSubscriber = () => {
     if (batteryListenerRef.current) {
       rosService.unsubscribeTopic(batteryListenerRef.current);
       batteryListenerRef.current = null;
@@ -58,21 +69,21 @@ const View = () => {
   useEffect(() => {
     const unsubscribe = rosService.onConnectionChange((status) => {
       if (status === "connected") {
-        setupBatterySubscriber();
+        setupSubscriber();
       } else {
-        cleanupBatterySubscriber();
+        cleanupSubscriber();
       }
     });
 
     // 如果已连接，立即设置订阅
     if (rosService.isConnected()) {
-      setupBatterySubscriber();
+      setupSubscriber();
     }
 
     // 组件卸载时清理资源
     return () => {
       unsubscribe();
-      cleanupBatterySubscriber();
+      cleanupSubscriber();
     };
   }, []);
 
@@ -194,7 +205,7 @@ const View = () => {
             <span className="status-label">RTK</span>
             <span className="status-value">{rtkStatus}</span>
           </div> */}
-          <div className="status-item">
+          {/* <div className="status-item">
             <div className="signal-strength">
               {Array(5)
                 .fill(0)
@@ -207,7 +218,7 @@ const View = () => {
                   ></div>
                 ))}
             </div>
-          </div>
+          </div> */}
           <div className="status-item">
             <div className="battery-indicator">
               <div
