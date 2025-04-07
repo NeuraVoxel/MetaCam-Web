@@ -107,6 +107,26 @@ const PointCloud: React.FC<PointCloudProps> = ({
   const setupSubscribers = () => {
     cleanupSubscribers();
 
+    const ros = rosService.getROSInstance();
+
+    // 订阅点云话题
+    ros?.on(topic, (msg: any) => {
+      if (rosService.isConnected()) {
+        if (workerRef.current) {
+          workerRef.current.postMessage(msg);
+          decodedWith = "worker: postMessage";
+        } else {
+          decodedWith = "no worker";
+          const result = parsePointCloud(msg);
+
+          allPoints.push(...result.points);
+          allColors.push(...result.colors);
+
+          renderPoints(allPoints.array, allColors.array);
+        }
+      }
+    });
+
     try {
       if (rosService.isConnected()) {
         // 订阅Odometry
@@ -179,26 +199,6 @@ const PointCloud: React.FC<PointCloudProps> = ({
     // Initialize Web Worker
     if (isWorkerSupported()) {
       console.info("当前环境支持 Web Worker");
-
-      const ros = rosService.getROSInstance();
-
-      // 订阅点云话题
-      ros?.on(topic, (msg: any) => {
-        if (rosService.isConnected()) {
-          if (workerRef.current) {
-            workerRef.current.postMessage(msg);
-            decodedWith = "worker: postMessage";
-          } else {
-            decodedWith = "no worker";
-            const result = parsePointCloud(msg);
-
-            allPoints.push(...result.points);
-            allColors.push(...result.colors);
-
-            renderPoints(allPoints.array, allColors.array);
-          }
-        }
-      });
 
       let worker = new Worker(
         new URL("../workers/pointCloudParser.worker.ts", import.meta.url)
@@ -364,6 +364,10 @@ const PointCloud: React.FC<PointCloudProps> = ({
     camera.up.set(0, 1, 0); // 默认是 (0, 1, 0) 即 Y 轴向上
     camera.lookAt(0, 0, 0);
     camera.position.set(0, 20, -50);
+
+    camera.up.set(0, 0, 1);
+    camera.position.set(0, 100, 0); // 将相机放在Y轴上方（原Z轴方向）
+    camera.lookAt(0, 0, 0);
 
     // 3. 创建渲染器
     if (!renderer) {
