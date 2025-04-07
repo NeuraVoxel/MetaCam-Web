@@ -134,10 +134,25 @@ const PointCloud: React.FC<PointCloudProps> = ({
           "/Odometry",
           "nav_msgs/Odometry",
           (message: any) => {
-            console.log("收到Odometry:", message);
+            // console.log("收到Odometry:", message);
             const pose: any = message.pose?.pose;
             const { orientation, position } = pose;
-            console.log(orientation, position);
+            // console.log(orientation, position);
+
+            if (stlModelRef.current) {
+              stlModelRef.current.position.set(
+                position.x,
+                position.y,
+                position.z
+              );
+              stlModelRef.current.quaternion.set(
+                orientation.x,
+                orientation.y,
+                orientation.z,
+                orientation.w
+              );
+              stlModelRef.current.updateMatrixWorld(true);
+            }
           }
         );
 
@@ -346,7 +361,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
       camera = new THREE.PerspectiveCamera(
         75,
         window.innerWidth / window.innerHeight,
-        0.1,
+        0.01,
         150000
       );
 
@@ -361,9 +376,9 @@ const PointCloud: React.FC<PointCloudProps> = ({
       //   1000
       // );
     }
-    camera.up.set(0, 1, 0); // 默认是 (0, 1, 0) 即 Y 轴向上
-    camera.lookAt(0, 0, 0);
-    camera.position.set(0, 20, -50);
+    // camera.up.set(0, 1, 0); // 默认是 (0, 1, 0) 即 Y 轴向上
+    // camera.lookAt(0, 0, 0);
+    // camera.position.set(0, 20, -50);
 
     camera.up.set(0, 0, 1);
     camera.position.set(0, 100, 0); // 将相机放在Y轴上方（原Z轴方向）
@@ -372,8 +387,8 @@ const PointCloud: React.FC<PointCloudProps> = ({
     // 3. 创建渲染器
     if (!renderer) {
       renderer = new THREE.WebGLRenderer({
-        antialias: false,
-        powerPreference: "low-power",
+        // antialias: false,
+        // powerPreference: "low-power",
       });
     }
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -625,7 +640,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
       const currentFPS = fpsCounter.update();
 
       // 更新STL模型位置和相机位置
-      if (stlModelRef.current && curve) {
+      /*  if (stlModelRef.current && curve) {
         // 更新进度
         progress += speed * deltaTime;
         if (progress > 1) progress = 0; // 循环移动
@@ -660,7 +675,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
         // // 更新相机位置和朝向
         // camera.position.copy(cameraPosition);
         // camera.lookAt(position); // 相机始终看向模型
-      }
+      } */
 
       // Update debug information
       setDebugInfo({
