@@ -12,7 +12,7 @@ import ROSLIB from "roslib";
 const View = () => {
   const navigate = useNavigate();
   const [isRecording, setIsRecording] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState("00:23");
+  const [elapsedTime, setElapsedTime] = useState("0.1h");
   const [storageSpace, setStorageSpace] = useState("167G");
   const [rtkStatus, setRtkStatus] = useState("无解");
   const [signalStrength, setSignalStrength] = useState(4);
@@ -49,6 +49,16 @@ const View = () => {
           (message: any) => {
             // console.log("收到U盘内存:", message);
             setStorageSpace(message.data);
+          }
+        );
+
+        // 订阅U盘内存
+        storageListenerRef.current = rosService.subscribeTopic(
+          "/project_duration",
+          "std_msgs/Float32",
+          (message: any) => {
+            console.log("收到任务时长:", message);
+            setElapsedTime(`${message.data.toFixed(2)}h`);
           }
         );
       }
