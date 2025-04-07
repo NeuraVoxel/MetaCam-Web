@@ -62,7 +62,6 @@ const PointCloud: React.FC<PointCloudProps> = ({
   // 添加STL模型和轨迹线的引用
   const stlModelRef = useRef<THREE.Mesh | null>(null);
   const trajectoryRef = useRef<THREE.Line | null>(null);
-  const [animationTime, setAnimationTime] = useState(10000);
 
   const maxPointNumber = 1000000 * 3;
   let allPoints: FixedLengthArray = new FixedLengthArray(maxPointNumber);
@@ -80,52 +79,84 @@ const PointCloud: React.FC<PointCloudProps> = ({
     cameraPosition: { x: 0, y: 0, z: 0 },
     controlsTarget: { x: 0, y: 0, z: 0 },
   });
-  const connectToROS = () => {
-    // 使用 rosService 连接
-    rosService.connect(url);
 
-    // 监听连接状态变化
+  const odometryListenerRef = useRef<ROSLIB.Topic | null>(null);
+
+  // 监听ROS连接状态变化
+  useEffect(() => {
     const unsubscribe = rosService.onConnectionChange((status) => {
-      setIsConnected(status === "connected");
       if (status === "connected") {
         setupSubscribers();
-      } else if (status === "disconnected" || status === "error") {
+      } else {
         cleanupSubscribers();
       }
     });
 
-    const ros = rosService.getROSInstance();
-    if (!ros) return unsubscribe;
-
-    // 订阅点云话题
-    ros.on(topic, (msg: any) => {
-      if (rosService.isConnected()) {
-        if (workerRef.current) {
-          workerRef.current.postMessage(msg);
-          decodedWith = "worker: postMessage";
-        } else {
-          decodedWith = "no worker";
-          const result = parsePointCloud(msg);
-
-          allPoints.push(...result.points);
-          allColors.push(...result.colors);
-
-          renderPoints(allPoints.array, allColors.array);
-        }
-      }
-    });
-
-    return unsubscribe;
-  };
-
-  const cleanupSubscribers = () => {
-    if (batteryListenerRef.current) {
-      rosService.unsubscribeTopic(batteryListenerRef.current);
-      batteryListenerRef.current = null;
+    // 如果已连接，立即设置订阅
+    if (rosService.isConnected()) {
+      setupSubscribers();
     }
 
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
+    // 组件卸载时清理资源
+    return () => {
+      unsubscribe();
+      cleanupSubscribers();
+    };
+  }, []);
+
+  const setupSubscribers = () => {
+    cleanupSubscribers();
+
+    try {
+      if (rosService.isConnected()) {
+        // 订阅Odometry
+        odometryListenerRef.current = rosService.subscribeTopic(
+          "/Odometry",
+          "nav_msgs/Odometry",
+          (message: any) => {
+            console.log("收到Odometry:", message);
+            const pose: any = message.pose?.pose;
+            const { orientation, position } = pose;
+            console.log(orientation, position);
+          }
+        );
+
+        // // 订阅电池状态
+        // batteryListenerRef.current = rosService.subscribeTopic(
+        //   batteryTopic,
+        //   "sensor_msgs/BatteryState",
+        //   (message: any) => {
+        //     setBatteryLevel(message.percentage * 100);
+        //   }
+        // );
+
+        // 设置TF客户端
+        tfClientRef.current = rosService.createTFClient({
+          fixedFrame: frameId,
+          angularThres: 0.01,
+          transThres: 0.01,
+        });
+
+        // 使用ROS3D处理点云数据
+        const ros = rosService.getROSInstance();
+        if (ros) {
+          new ROS3D.PointCloud2({
+            ros: ros!,
+            topic: topic,
+            tfClient: tfClientRef.current,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("设置电池状态订阅时出错:", error);
+    }
+  };
+
+  // 清理订阅
+  const cleanupSubscribers = () => {
+    if (odometryListenerRef.current) {
+      rosService.unsubscribeTopic(odometryListenerRef.current);
+      odometryListenerRef.current = null;
     }
 
     tfClientRef.current = null;
@@ -143,73 +174,31 @@ const PointCloud: React.FC<PointCloudProps> = ({
     }
   };
 
-  const setupSubscribers = () => {
-    // 清理旧的订阅
-    cleanupSubscribers();
-
-    try {
-      // 订阅电池状态
-      batteryListenerRef.current = rosService.subscribeTopic(
-        batteryTopic,
-        "sensor_msgs/BatteryState",
-        (message: any) => {
-          setBatteryLevel(message.percentage * 100);
-        }
-      );
-
-      // 设置TF客户端
-      tfClientRef.current = rosService.createTFClient({
-        fixedFrame: frameId,
-        angularThres: 0.01,
-        transThres: 0.01,
-      });
-
-      // 使用ROS3D处理点云数据
-      const ros = rosService.getROSInstance();
-      if (ros) {
-        new ROS3D.PointCloud2({
-          ros: ros!,
-          topic: topic,
-          tfClient: tfClientRef.current,
-        });
-      }
-    } catch (error) {
-      console.error("设置ROS订阅时出错:", error);
-    }
-  };
-
-  const handleToggleConnection = () => {
-    if (isConnected) {
-      rosService.disconnect();
-    } else {
-      connectToROS();
-    }
-  };
-
-  const renderPoints = (points: any, colors: any) => {
-    if (points.length === 0) {
-      console.warn("No valid points found in point cloud");
-      return;
-    }
-
-    particlesGeometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(points, 3)
-    );
-    particlesGeometry.setAttribute(
-      "color",
-      new THREE.Float32BufferAttribute(colors, 3)
-    );
-
-    particlesGeometry.attributes.position.needsUpdate = true;
-    particlesGeometry.attributes.color.needsUpdate = true;
-  };
-
   useEffect(() => {
     if (!viewerRef.current) return;
     // Initialize Web Worker
     if (isWorkerSupported()) {
       console.info("当前环境支持 Web Worker");
+
+      const ros = rosService.getROSInstance();
+
+      // 订阅点云话题
+      ros?.on(topic, (msg: any) => {
+        if (rosService.isConnected()) {
+          if (workerRef.current) {
+            workerRef.current.postMessage(msg);
+            decodedWith = "worker: postMessage";
+          } else {
+            decodedWith = "no worker";
+            const result = parsePointCloud(msg);
+
+            allPoints.push(...result.points);
+            allColors.push(...result.colors);
+
+            renderPoints(allPoints.array, allColors.array);
+          }
+        }
+      });
 
       let worker = new Worker(
         new URL("../workers/pointCloudParser.worker.ts", import.meta.url)
@@ -318,15 +307,8 @@ const PointCloud: React.FC<PointCloudProps> = ({
       decodedWith = "no worker";
     }
 
-    // 初始连接
-    const unsubscribeROS = connectToROS();
-
     // 清理函数
     return () => {
-      unsubscribeROS(); // 取消ROS连接状态监听
-      cleanupSubscribers();
-      rosService.disconnect();
-
       if (viewerRef.current) {
         while (viewerRef.current.firstChild) {
           viewerRef.current.removeChild(viewerRef.current.firstChild);
@@ -418,7 +400,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
       };
 
       // 关键参数配置
-      controls.enableDamping = true; // 启用阻尼惯性（提升操作流畅性）[1,6](@ref)
+      controls.enableDamping = true; // 启用阻尼惯性（提升操作流畅性）
       controls.dampingFactor = 0.05; // 阻尼强度（值越小惯性越明显）
       controls.enableZoom = true; // 允许缩放
       controls.zoomSpeed = 1.5; // 缩放灵敏度
@@ -426,7 +408,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
       controls.rotateSpeed = 0.8; // 旋转灵敏度
       controls.enablePan = true; // 允许平移
       controls.panSpeed = 0.5; // 平移速度
-      controls.screenSpacePanning = false; // 禁用屏幕空间平移（更适合 3D 场景）[6](@ref)
+      controls.screenSpacePanning = false; // 禁用屏幕空间平移（更适合 3D 场景）
     }
 
     // 添加物体
@@ -714,8 +696,26 @@ const PointCloud: React.FC<PointCloudProps> = ({
       particlesGeometry.dispose();
       particlesMaterial.dispose();
     };
-  }, [stlPath, animationTime]);
+  }, [stlPath]);
 
+  const renderPoints = (points: any, colors: any) => {
+    if (points.length === 0) {
+      console.warn("No valid points found in point cloud");
+      return;
+    }
+
+    particlesGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(points, 3)
+    );
+    particlesGeometry.setAttribute(
+      "color",
+      new THREE.Float32BufferAttribute(colors, 3)
+    );
+
+    particlesGeometry.attributes.position.needsUpdate = true;
+    particlesGeometry.attributes.color.needsUpdate = true;
+  };
   const parsePointCloud = (msg: any) => {
     console.log("not from web worker");
     const buffer = new Uint8Array(msg.data).buffer;

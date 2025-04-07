@@ -28,12 +28,12 @@ const View = () => {
   const elapsedTimeListenerRef = useRef<ROSLIB.Topic | null>(null);
   const keyframeImageListenerRef = useRef<ROSLIB.Topic | null>(null);
   const driverStatusListenerRef = useRef<ROSLIB.Topic | null>(null);
-  const odometryListenerRef = useRef<ROSLIB.Topic | null>(null);
+  // const odometryListenerRef = useRef<ROSLIB.Topic | null>(null);
   const keyframeCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // 设置订阅
-  const setupSubscriber = () => {
-    cleanupSubscriber();
+  const setupSubscribers = () => {
+    cleanupSubscribers();
 
     try {
       if (rosService.isConnected()) {
@@ -147,17 +147,17 @@ const View = () => {
           }
         );
 
-        // 订阅Odometry
-        odometryListenerRef.current = rosService.subscribeTopic(
-          "/Odometry",
-          "nav_msgs/Odometry",
-          (message: any) => {
-            console.log("收到Odometry:", message);
-            const pose: any = message.pose?.pose;
-            const { orientation, position } = pose;
-            console.log(orientation, position);
-          }
-        );
+        // // 订阅Odometry
+        // odometryListenerRef.current = rosService.subscribeTopic(
+        //   "/Odometry",
+        //   "nav_msgs/Odometry",
+        //   (message: any) => {
+        //     console.log("收到Odometry:", message);
+        //     const pose: any = message.pose?.pose;
+        //     const { orientation, position } = pose;
+        //     console.log(orientation, position);
+        //   }
+        // );
       }
     } catch (error) {
       console.error("设置电池状态订阅时出错:", error);
@@ -165,7 +165,7 @@ const View = () => {
   };
 
   // 清理订阅
-  const cleanupSubscriber = () => {
+  const cleanupSubscribers = () => {
     if (batteryListenerRef.current) {
       rosService.unsubscribeTopic(batteryListenerRef.current);
       batteryListenerRef.current = null;
@@ -191,21 +191,21 @@ const View = () => {
   useEffect(() => {
     const unsubscribe = rosService.onConnectionChange((status) => {
       if (status === "connected") {
-        setupSubscriber();
+        setupSubscribers();
       } else {
-        cleanupSubscriber();
+        cleanupSubscribers();
       }
     });
 
     // 如果已连接，立即设置订阅
     if (rosService.isConnected()) {
-      setupSubscriber();
+      setupSubscribers();
     }
 
     // 组件卸载时清理资源
     return () => {
       unsubscribe();
-      cleanupSubscriber();
+      cleanupSubscribers();
     };
   }, []);
 
