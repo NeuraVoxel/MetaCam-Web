@@ -28,6 +28,7 @@ const View = () => {
   const elapsedTimeListenerRef = useRef<ROSLIB.Topic | null>(null);
   const keyframeImageListenerRef = useRef<ROSLIB.Topic | null>(null);
   const driverStatusListenerRef = useRef<ROSLIB.Topic | null>(null);
+  const odometryListenerRef = useRef<ROSLIB.Topic | null>(null);
   const keyframeCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // 设置订阅
@@ -143,6 +144,18 @@ const View = () => {
                 label: "LIDAR",
               },
             });
+          }
+        );
+
+        // 订阅Odometry
+        odometryListenerRef.current = rosService.subscribeTopic(
+          "/Odometry",
+          "nav_msgs/Odometry",
+          (message: any) => {
+            console.log("收到Odometry:", message);
+            const pose: any = message.pose?.pose;
+            const { orientation, position } = pose;
+            console.log(orientation, position);
           }
         );
       }
