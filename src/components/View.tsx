@@ -27,6 +27,7 @@ const View = () => {
   const storageListenerRef = useRef<ROSLIB.Topic | null>(null);
   const elapsedTimeListenerRef = useRef<ROSLIB.Topic | null>(null);
   const keyframeImageListenerRef = useRef<ROSLIB.Topic | null>(null);
+  const driverStatusListenerRef = useRef<ROSLIB.Topic | null>(null);
   const keyframeCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // 设置订阅
@@ -100,6 +101,48 @@ const View = () => {
                 console.error("Error processing keyframe image:", error);
               }
             }
+          }
+        );
+
+        // 订阅系统状态
+        driverStatusListenerRef.current = rosService.subscribeTopic(
+          "/driver_status",
+          "std_msgs/UInt8",
+          (message: any) => {
+            // console.log("收到系统状态:", message);
+            // 8 bytes. 0,0,0,0,SD,SLAM,CAM,LiDAR
+            const statusArray = [
+              message.data & 0x01,
+              (message.data >> 1) & 0x01,
+              (message.data >> 2) & 0x01,
+              (message.data >> 3) & 0x01,
+            ];
+
+            // console.log(
+            //   "Driver status received:",
+            //   message.data,
+            //   "Parsed status:",
+            //   statusArray
+            // );
+
+            setSystemStatus({
+              sdCard: {
+                status: !!statusArray[0] ? "active" : "warning",
+                label: "SD卡",
+              },
+              slam: {
+                status: !!statusArray[1] ? "active" : "warning",
+                label: "SLAM",
+              },
+              cam: {
+                status: !!statusArray[2] ? "active" : "warning",
+                label: "CAM",
+              },
+              lidar: {
+                status: !!statusArray[3] ? "active" : "warning",
+                label: "LIDAR",
+              },
+            });
           }
         );
       }
