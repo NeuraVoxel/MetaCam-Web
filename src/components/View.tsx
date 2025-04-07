@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./View.css";
 import ConfigModal from "./ConfigModal";
@@ -6,6 +6,8 @@ import PointCloud from "./PointCloud"; // 导入PointCloud组件
 import BatteryIndicator from "./BatteryIndicator"; // 导入电池指示器组件
 import ConnectionControl from "./ConnectionControl"; // 导入连接控制组件
 import { ROSContext } from "../App"; // 导入ROS上下文
+import rosService from "../services/ROSService";
+import ROSLIB from "roslib";
 
 const View = () => {
   const navigate = useNavigate();
@@ -18,24 +20,64 @@ const View = () => {
   const [dataCollecting, setDataCollecting] = useState(true);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
-  // 获取ROS连接状态和电池电量
-  const {
-    isConnected,
-    batteryLevel: rosBatteryLevel,
-    disconnectROS,
-    connectToROS,
-  } = useContext(ROSContext);
+  const { disconnectROS, connectToROS } = useContext(ROSContext);
 
-  // 使用ROS电池电量更新本地状态
-  useEffect(() => {
-    if (rosBatteryLevel !== undefined) {
-      setBatteryLevel(rosBatteryLevel);
+  // 添加电池状态订阅引用
+  const batteryListenerRef = useRef<ROSLIB.Topic | null>(null);
+
+  // 设置电池状态订阅
+  const setupBatterySubscriber = () => {
+    cleanupBatterySubscriber();
+
+    try {
+      if (rosService.isConnected()) {
+        // 订阅电池状态
+        batteryListenerRef.current = rosService.subscribeTopic(
+          "/battery",
+          "sensor_msgs/BatteryState",
+          (message: any) => {
+            // console.log("收到电池状态消息:", message);
+            setBatteryLevel(message.percentage * 100);
+          }
+        );
+      }
+    } catch (error) {
+      console.error("设置电池状态订阅时出错:", error);
     }
-  }, [rosBatteryLevel]);
+  };
 
-  // 处理连接控制
+  // 清理电池状态订阅
+  const cleanupBatterySubscriber = () => {
+    if (batteryListenerRef.current) {
+      rosService.unsubscribeTopic(batteryListenerRef.current);
+      batteryListenerRef.current = null;
+    }
+  };
+
+  // 监听ROS连接状态变化
+  useEffect(() => {
+    const unsubscribe = rosService.onConnectionChange((status) => {
+      if (status === "connected") {
+        setupBatterySubscriber();
+      } else {
+        cleanupBatterySubscriber();
+      }
+    });
+
+    // 如果已连接，立即设置订阅
+    if (rosService.isConnected()) {
+      setupBatterySubscriber();
+    }
+
+    // 组件卸载时清理资源
+    return () => {
+      unsubscribe();
+      cleanupBatterySubscriber();
+    };
+  }, []);
+
   const handleToggleConnection = () => {
-    if (isConnected) {
+    if (rosService.isConnected()) {
       disconnectROS();
     } else {
       connectToROS("ws://192.168.1.11:9090");
@@ -111,13 +153,13 @@ const View = () => {
           <button className="back-button" onClick={() => navigate("/")}>
             &lt; 返回
           </button>
-           {/* 添加电池指示器和连接控制组件 */}
+          {/* 添加电池指示器和连接控制组件 */}
           {/* <div className="status-item">
             <BatteryIndicator percentage={batteryLevel} />
           </div> */}
           <div className="status-item">
             <ConnectionControl
-              isConnected={isConnected}
+              isConnected={rosService.isConnected()}
               onToggleConnection={handleToggleConnection}
             />
           </div>
@@ -171,7 +213,9 @@ const View = () => {
               <div
                 className="battery-level"
                 style={{ width: `${batteryLevel}%` }}
-              > </div>
+              >
+                {" "}
+              </div>
             </div>
           </div>
           <button className="settings-button" onClick={openConfigModal}>

@@ -163,27 +163,10 @@ function App() {
   // 设置订阅
   const setupSubscribers = () => {
     cleanupSubscribers();
-
-    try {
-      // 订阅电池状态
-      batteryListenerRef.current = rosService.subscribeTopic(
-        '/battery_state',
-        'sensor_msgs/BatteryState',
-        (message: any) => {
-          setBatteryLevel(message.percentage * 100);
-        }
-      );
-    } catch (error) {
-      console.error('设置ROS订阅时出错:', error);
-    }
   };
 
   // 清理订阅
   const cleanupSubscribers = () => {
-    if (batteryListenerRef.current) {
-      rosService.unsubscribeTopic(batteryListenerRef.current);
-      batteryListenerRef.current = null;
-    }
   };
 
   // 组件卸载时清理资源
