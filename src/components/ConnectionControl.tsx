@@ -1,6 +1,6 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlug, faPlugCircleXmark } from '@fortawesome/free-solid-svg-icons';
+import {  faLink ,faLinkSlash} from '@fortawesome/free-solid-svg-icons';
 
 interface ConnectionControlProps {
   isConnected: boolean;
@@ -19,7 +19,7 @@ const ConnectionControl: React.FC<ConnectionControlProps> = ({
         title={isConnected ? 'Disconnect' : 'Connect'}
       >
         <FontAwesomeIcon
-          icon={isConnected ? faPlug : faPlugCircleXmark}
+          icon={isConnected ? faLink : faLinkSlash}
           style={{ fontSize: '20px' }}
         />
         <span className="connection-status">

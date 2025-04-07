@@ -1,77 +1,86 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './View.css';
-import ConfigModal from './ConfigModal';
-import PointCloud from './PointCloud'; // 导入PointCloud组件
-import BatteryIndicator from './BatteryIndicator'; // 导入电池指示器组件
-import ConnectionControl from './ConnectionControl'; // 导入连接控制组件
-import { ROSContext } from '../App'; // 导入ROS上下文
+import React, { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import "./View.css";
+import ConfigModal from "./ConfigModal";
+import PointCloud from "./PointCloud"; // 导入PointCloud组件
+import BatteryIndicator from "./BatteryIndicator"; // 导入电池指示器组件
+import ConnectionControl from "./ConnectionControl"; // 导入连接控制组件
+import { ROSContext } from "../App"; // 导入ROS上下文
 
 const View = () => {
   const navigate = useNavigate();
   const [isRecording, setIsRecording] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState('00:23');
-  const [storageSpace, setStorageSpace] = useState('167G');
-  const [rtkStatus, setRtkStatus] = useState('无解');
+  const [elapsedTime, setElapsedTime] = useState("00:23");
+  const [storageSpace, setStorageSpace] = useState("167G");
+  const [rtkStatus, setRtkStatus] = useState("无解");
   const [signalStrength, setSignalStrength] = useState(4);
   const [batteryLevel, setBatteryLevel] = useState(85);
   const [dataCollecting, setDataCollecting] = useState(true);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  
+
   // 获取ROS连接状态和电池电量
-  const { isConnected, batteryLevel: rosBatteryLevel, disconnectROS, connectToROS } = useContext(ROSContext);
-  
+  const {
+    isConnected,
+    batteryLevel: rosBatteryLevel,
+    disconnectROS,
+    connectToROS,
+  } = useContext(ROSContext);
+
   // 使用ROS电池电量更新本地状态
   useEffect(() => {
     if (rosBatteryLevel !== undefined) {
       setBatteryLevel(rosBatteryLevel);
     }
   }, [rosBatteryLevel]);
-  
+
   // 处理连接控制
   const handleToggleConnection = () => {
     if (isConnected) {
       disconnectROS();
     } else {
-      connectToROS('ws://192.168.1.11:9090');
+      connectToROS("ws://192.168.1.11:9090");
     }
   };
-  
+
   // 添加系统状态
   const [systemStatus, setSystemStatus] = useState({
-    sdCard: { status: 'active', label: 'SD卡' },
-    slam: { status: 'warning', label: 'SLAM' },
-    cam: { status: 'active', label: 'CAM' },
-    lidar: { status: 'active', label: 'LIDAR' }
+    sdCard: { status: "active", label: "SD卡" },
+    slam: { status: "warning", label: "SLAM" },
+    cam: { status: "active", label: "CAM" },
+    lidar: { status: "active", label: "LIDAR" },
   });
-  
+
   // 其他状态保持不变
   const [config, setConfig] = useState({
-    resolution: 'high',
-    frameRate: '30',
+    resolution: "high",
+    frameRate: "30",
     pointSize: 3,
-    colorMode: 'height',
+    colorMode: "height",
     autoSave: false,
     saveInterval: 60,
-    showDebugPanel: true
+    showDebugPanel: true,
   });
 
   useEffect(() => {
     // 模拟计时器
     if (isRecording) {
       const timer = setInterval(() => {
-        const [minutes, seconds] = elapsedTime.split(':').map(Number);
+        const [minutes, seconds] = elapsedTime.split(":").map(Number);
         let newSeconds = seconds + 1;
         let newMinutes = minutes;
-        
+
         if (newSeconds >= 60) {
           newSeconds = 0;
           newMinutes += 1;
         }
-        
-        setElapsedTime(`${newMinutes.toString().padStart(2, '0')}:${newSeconds.toString().padStart(2, '0')}`);
+
+        setElapsedTime(
+          `${newMinutes.toString().padStart(2, "0")}:${newSeconds
+            .toString()
+            .padStart(2, "0")}`
+        );
       }, 1000);
-      
+
       return () => clearInterval(timer);
     }
   }, [isRecording, elapsedTime]);
@@ -90,7 +99,7 @@ const View = () => {
 
   const saveConfig = (newConfig: any) => {
     setConfig(newConfig);
-    console.log('保存配置:', newConfig);
+    console.log("保存配置:", newConfig);
     // 这里可以添加将配置保存到后端或本地存储的逻辑
   };
 
@@ -99,24 +108,37 @@ const View = () => {
       {/* 顶部状态栏 */}
       <div className="status-bar">
         <div className="left-controls">
-          <button className="back-button" onClick={() => navigate('/')}>
+          <button className="back-button" onClick={() => navigate("/")}>
             &lt; 返回
           </button>
-          <div className={`status-indicator ${dataCollecting ? 'active' : ''}`}>
+           {/* 添加电池指示器和连接控制组件 */}
+          {/* <div className="status-item">
+            <BatteryIndicator percentage={batteryLevel} />
+          </div> */}
+          <div className="status-item">
+            <ConnectionControl
+              isConnected={isConnected}
+              onToggleConnection={handleToggleConnection}
+            />
+          </div>
+
+          <div className={`status-indicator ${dataCollecting ? "active" : ""}`}>
             数据采集中
           </div>
-          
+
           {/* 添加系统状态指示器 */}
           <div className="system-status-container">
             {Object.entries(systemStatus).map(([key, value]) => (
               <div key={key} className="system-status-item">
-                <div className={`system-status-indicator ${value.status}`}></div>
+                <div
+                  className={`system-status-indicator ${value.status}`}
+                ></div>
                 <span className="system-status-label">{value.label}</span>
               </div>
             ))}
           </div>
         </div>
-        
+
         <div className="status-info">
           <div className="status-item">
             <span className="status-label">任务时长</span>
@@ -126,38 +148,43 @@ const View = () => {
             <span className="status-label">U盘内存</span>
             <span className="status-value">{storageSpace}</span>
           </div>
-          <div className="status-item">
+          {/* <div className="status-item">
             <span className="status-label">RTK</span>
             <span className="status-value">{rtkStatus}</span>
-          </div>
+          </div> */}
           <div className="status-item">
             <div className="signal-strength">
-              {Array(5).fill(0).map((_, i) => (
-                <div key={i} className={`signal-bar ${i < signalStrength ? 'active' : ''}`}></div>
-              ))}
+              {Array(5)
+                .fill(0)
+                .map((_, i) => (
+                  <div
+                    key={i}
+                    className={`signal-bar ${
+                      i < signalStrength ? "active" : ""
+                    }`}
+                  ></div>
+                ))}
             </div>
           </div>
-          
-          {/* 添加电池指示器和连接控制组件 */}
           <div className="status-item">
-            <BatteryIndicator percentage={batteryLevel} />
+            <div className="battery-indicator">
+              <div
+                className="battery-level"
+                style={{ width: `${batteryLevel}%` }}
+              > </div>
+            </div>
           </div>
-          <div className="status-item">
-            <ConnectionControl
-              isConnected={isConnected}
-              onToggleConnection={handleToggleConnection}
-            />
-          </div>
-          
-          <button className="settings-button" onClick={openConfigModal}>⚙️</button>
+          <button className="settings-button" onClick={openConfigModal}>
+            ⚙️
+          </button>
         </div>
       </div>
-      
+
       {/* 主视图区域 - 点云数据 */}
       <div className="main-view">
         {/* 集成PointCloud组件 */}
         <div className="point-cloud-container">
-          <PointCloud 
+          <PointCloud
             url="ws://192.168.1.11:9090"
             topic="/lidar_out"
             width={1200}
@@ -168,21 +195,22 @@ const View = () => {
             stlPath="/assets/8888.stl"
           />
         </div>
-        
+
         {/* 中心标记 */}
         <div className="center-marker"></div>
-        
+
         {/* 全景预览窗口 */}
         <div className="panorama-preview">
           <button className="close-preview">✕</button>
-          <div className="panorama-image">
-            {/* 全景图像将在这里显示 */}
-          </div>
+          <div className="panorama-image">{/* 全景图像将在这里显示 */}</div>
         </div>
-        
+
         {/* 右侧功能按钮 */}
         <div className="right-controls">
-          <button className={`record-button ${isRecording ? 'recording' : ''}`} onClick={toggleRecording}>
+          <button
+            className={`record-button ${isRecording ? "recording" : ""}`}
+            onClick={toggleRecording}
+          >
             <span className="record-icon"></span>
           </button>
           <button className="location-button">
@@ -193,7 +221,7 @@ const View = () => {
           </button>
         </div>
       </div>
-      
+
       {/* 底部进度条 */}
       {/* <div className="progress-bar">
         <div className="progress-indicator"></div>
