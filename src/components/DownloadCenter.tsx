@@ -103,7 +103,7 @@ const DownloadCenter: React.FC = () => {
 
   /**
    * Sets up and executes a ROS service call to retrieve version information.
-   * Makes an asynchronous call to the "/get_version" service using the "metacam_node/Base" type.
+   * Makes an asynchronous call to the "/get_version" service using the "metacam_node/Version" type.
    * Logs the response or any errors that occur during the service call.
    *
    * @throws {Error} When the service call fails
@@ -115,7 +115,7 @@ const DownloadCenter: React.FC = () => {
       rosService
         .callService<{}, { success: boolean; message: string }>(
           "/get_version",
-          "metacam_node/Base",
+          "metacam_node/Version",
           {}
         )
         .then((response: any) => {
