@@ -161,12 +161,13 @@ const PointCloud: React.FC<PointCloudProps> = ({
                 controls.target.set(position.x, position.y, position.z);
                 
                 // 确保相机与模型保持一定距离
-                const cameraOffset = new THREE.Vector3(0, 20, 20); // 相机相对于模型的偏移量
+                const cameraOffset = new THREE.Vector3(-6, 0, 2); // 相机相对于模型的偏移量
                 const modelPosition = new THREE.Vector3(position.x, position.y, position.z);
                 
                 // 计算相机新位置（模型位置 + 偏移量）
                 const newCameraPosition = modelPosition.clone().add(cameraOffset);
-                camera.position.copy(newCameraPosition);
+                // camera.position.copy(newCameraPosition);
+                // camera.lookAt(modelPosition);
                 
                 // 更新控制器
                 controls.update();
