@@ -1,20 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import './App.css';
-import PointCloud from './components/PointCloud';
-import View from './components/View';
-import DownloadCenter from './components/DownloadCenter';
-import ProjectManagement from './components/ProjectManagement';
-import ProjectDetail from './components/ProjectDetail';
-import { useNavigate } from 'react-router-dom';
-import rosService from './services/ROSService';
+import React, { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import "./App.css";
+import PointCloud from "./components/PointCloud";
+import View from "./components/View";
+import DownloadCenter from "./components/DownloadCenter";
+import ProjectManagement from "./components/ProjectManagement";
+import ProjectDetail from "./components/ProjectDetail";
+import { useNavigate } from "react-router-dom";
+import rosService from "./services/ROSService";
 
 // ROS连接状态上下文
 export const ROSContext = React.createContext({
   isConnected: false,
   batteryLevel: 100,
   connectToROS: (url: string) => {},
-  disconnectROS: () => {}
+  disconnectROS: () => {},
 });
 
 function LoginPage() {
@@ -24,10 +29,10 @@ function LoginPage() {
 
   // 模拟设备连接状态检查
   useEffect(() => {
-     connectToROS('ws://192.168.1.11:9090');
+    connectToROS("ws://192.168.1.11:9090");
     // 监听ROS连接状态变化
     const unsubscribe = rosService.onConnectionChange((status) => {
-      setIsDeviceConnected(status === 'connected');
+      setIsDeviceConnected(status === "connected");
     });
     // 清理函数
     return () => {
@@ -38,31 +43,31 @@ function LoginPage() {
   const handleStart = () => {
     if (isDeviceConnected) {
       // 连接到ROS服务器
-      navigate('/view'); // 修改为跳转到view页面
+      navigate("/view"); // 修改为跳转到view页面
     }
   };
 
   return (
     <div className="login-container">
       <div className="top-right-buttons">
-        <button 
-          className="top-right-button" 
-          onClick={() => alert('隐私政策')}
+        <button
+          className="top-right-button"
+          onClick={() => alert("隐私政策")}
           title="隐私政策"
         >
           ❓
         </button>
-        <button 
-          className="top-right-button" 
-          onClick={() => alert('联系方式')}
+        <button
+          className="top-right-button"
+          onClick={() => alert("联系方式")}
           title="联系方式"
         >
           ✉️
         </button>
-        <button 
-          className="top-right-button" 
+        <button
+          className="top-right-button"
           onClick={() => {
-            navigate('/download'); 
+            navigate("/download");
             // alert('软件/固件下载')
           }}
           title="软件/固件下载"
@@ -71,41 +76,45 @@ function LoginPage() {
         </button>
       </div>
       <h1>MetaCam</h1>
-      
+
       <div className="card-container">
         {/* 连接设备状态 */}
-        <div className="card-button" onClick={() => alert('设备连接管理')}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span className={`status-indicator ${isDeviceConnected ? 'status-connected' : 'status-disconnected'}`} />
-            {isDeviceConnected ? '设备已连接' : '设备未连接'}
+        <div className="card-button" onClick={() => alert("设备连接管理")}>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <span
+              className={`status-indicator ${
+                isDeviceConnected ? "status-connected" : "status-disconnected"
+              }`}
+            />
+            {isDeviceConnected ? "设备已连接" : "设备未连接"}
           </div>
         </div>
 
         {/* 项目管理按钮 - 新增 */}
-        <div className="card-button" onClick={() => navigate('/projects')}>
+        <div className="card-button" onClick={() => navigate("/projects")}>
           <i>📊</i>
           <span>项目管理</span>
         </div>
 
         {/* 使用教程按钮 */}
-        <div className="card-button" onClick={() => alert('打开使用教程')}>
+        <div className="card-button" onClick={() => alert("打开使用教程")}>
           <i>📚</i>
           <span>使用教程</span>
         </div>
 
         {/* 文件管理按钮 */}
-        <div className="card-button" onClick={() => alert('打开文件管理')}>
+        <div className="card-button" onClick={() => alert("打开文件管理")}>
           <i>📁</i>
           <span>文件管理</span>
         </div>
 
         {/* 开始作业按钮 */}
-        <div 
-          className={`card-button ${!isDeviceConnected ? 'disabled' : ''}`} 
+        <div
+          className={`card-button ${!isDeviceConnected ? "disabled" : ""}`}
           onClick={handleStart}
         >
           <i>🚀</i>
-          <span>{isDeviceConnected ? '开始作业' : '尚未连接设备'}</span>
+          <span>{isDeviceConnected ? "开始作业" : "尚未连接设备"}</span>
         </div>
       </div>
     </div>
@@ -117,6 +126,7 @@ function App() {
   const [batteryLevel, setBatteryLevel] = useState(100);
   const batteryListenerRef = React.useRef<any>(null);
 
+  
   async function exampleServiceCall() {
     try {
       // 调用服务并等待响应
@@ -142,13 +152,14 @@ function App() {
   const connectToROS = (url: string) => {
     // 使用rosService连接
     rosService.connect(url);
-    
+
     // 监听连接状态变化
     rosService.onConnectionChange((status) => {
       setIsConnected(status === "connected");
       if (status === "connected") {
         setupSubscribers();
         exampleServiceCall();
+        
       } else if (status === "disconnected" || status === "error") {
         cleanupSubscribers();
       }
@@ -166,8 +177,7 @@ function App() {
   };
 
   // 清理订阅
-  const cleanupSubscribers = () => {
-  };
+  const cleanupSubscribers = () => {};
 
   // 组件卸载时清理资源
   useEffect(() => {
@@ -178,12 +188,14 @@ function App() {
   }, []);
 
   return (
-    <ROSContext.Provider value={{ 
-      isConnected, 
-      batteryLevel, 
-      connectToROS, 
-      disconnectROS 
-    }}>
+    <ROSContext.Provider
+      value={{
+        isConnected,
+        batteryLevel,
+        connectToROS,
+        disconnectROS,
+      }}
+    >
       <Router>
         <Routes>
           <Route path="/" element={<LoginPage />} />
