@@ -165,7 +165,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
                 const modelPosition = new THREE.Vector3(position.x, position.y, position.z);
                 
                 // 计算相机新位置（模型位置 + 偏移量）
-                const newCameraPosition = modelPosition.clone().add(cameraOffset);
+                // const newCameraPosition = modelPosition.clone().add(cameraOffset);
                 // camera.position.copy(newCameraPosition);
                 // camera.lookAt(modelPosition);
                 
