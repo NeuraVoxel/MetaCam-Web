@@ -57,6 +57,26 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
     } catch (error) {
       console.error("服务调用失败:", error);
     }
+
+    try {
+      rosService
+        .callService<
+          {
+            ip_subnet: string;
+          },
+          { success: boolean; message: string }
+        >("/ip_config", "metacam_node/IPConfig", {
+          ip_subnet: "192.168.0.33/24",
+        })
+        .then((response: any) => {
+          console.log("ip_config:", response);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    } catch (error) {
+      console.error("服务调用失败:", error);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -100,6 +120,8 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 value={config.frameRate}
                 onChange={handleChange}
               >
+                <option value="1">1 fps</option>
+                <option value="10">10 fps</option>
                 <option value="30">30 fps</option>
                 <option value="60">60 fps</option>
                 <option value="120">120 fps</option>
@@ -280,7 +302,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 title="请输入有效的IP地址，例如: 192.168.0.33"
               />
             </div>
-            <div className="config-row">
+            {/* <div className="config-row">
               <label htmlFor="autoConnect">自动连接</label>
               <input
                 type="checkbox"
@@ -301,7 +323,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 value={config.connectionPort || 8080}
                 onChange={handleChange}
               />
-            </div>
+            </div> */}
           </div>
 
           <div className="config-actions">
