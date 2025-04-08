@@ -81,6 +81,12 @@ const PointCloud: React.FC<PointCloudProps> = ({
   });
 
   const odometryListenerRef = useRef<ROSLIB.Topic | null>(null);
+  // 添加轨迹点数组引用
+  const trajectoryPointsRef = useRef<THREE.Vector3[]>([]);
+  // 添加轨迹线对象引用
+  const odometryTrajectoryRef = useRef<THREE.Line | null>(null);
+  // 设置轨迹线最大长度
+  const maxTrajectoryLength = 1000;
 
   // 监听ROS连接状态变化
   useEffect(() => {
@@ -153,6 +159,9 @@ const PointCloud: React.FC<PointCloudProps> = ({
               );
               stlModelRef.current.updateMatrixWorld(true);
             }
+            
+            // 添加轨迹点并更新轨迹线
+            updateTrajectory(position);
           }
         );
 
@@ -187,12 +196,66 @@ const PointCloud: React.FC<PointCloudProps> = ({
     }
   };
 
+  // 添加更新轨迹的函数
+  const updateTrajectory = (position: any) => {
+    if (!scene) return;
+    
+    // 创建新的轨迹点
+    const newPoint = new THREE.Vector3(position.x, position.y, position.z);
+    
+    // 将新点添加到轨迹点数组
+    trajectoryPointsRef.current.push(newPoint);
+    
+    // 如果轨迹点超过最大长度，移除最早的点
+    if (trajectoryPointsRef.current.length > maxTrajectoryLength) {
+      trajectoryPointsRef.current.shift();
+    }
+    
+    // 更新或创建轨迹线
+    if (trajectoryPointsRef.current.length > 1) {
+      // 创建轨迹线几何体
+      const geometry = new THREE.BufferGeometry().setFromPoints(trajectoryPointsRef.current);
+      
+      // 如果轨迹线已存在，更新几何体
+      if (odometryTrajectoryRef.current) {
+        odometryTrajectoryRef.current.geometry.dispose();
+        odometryTrajectoryRef.current.geometry = geometry;
+      } else {
+        // 创建轨迹线材质
+        const material = new THREE.LineBasicMaterial({
+          color: 0x00ff00, // 绿色轨迹线
+          linewidth: 2,
+        });
+        
+        // 创建轨迹线
+        const trajectoryLine = new THREE.Line(geometry, material);
+        trajectoryLine.name = "OdometryTrajectory";
+        
+        // 添加到场景
+        scene.add(trajectoryLine);
+        
+        // 保存轨迹线引用
+        odometryTrajectoryRef.current = trajectoryLine;
+      }
+    }
+  };
+
   // 清理订阅
   const cleanupSubscribers = () => {
     if (odometryListenerRef.current) {
       rosService.unsubscribeTopic(odometryListenerRef.current);
       odometryListenerRef.current = null;
     }
+    
+    // 清理轨迹线
+    if (odometryTrajectoryRef.current && scene) {
+      scene.remove(odometryTrajectoryRef.current);
+      odometryTrajectoryRef.current.geometry.dispose();
+      odometryTrajectoryRef.current = null;
+    }
+    
+    // 清空轨迹点数组
+    trajectoryPointsRef.current = [];
 
     tfClientRef.current = null;
 
