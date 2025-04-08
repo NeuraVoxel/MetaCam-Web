@@ -3,8 +3,6 @@ import * as THREE from "three";
 import ROSLIB from "roslib";
 import * as ROS3D from "ros3d";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
-import BatteryIndicator from "./BatteryIndicator";
-import ConnectionControl from "./ConnectionControl";
 import DebugPanel from "./DebugPanel";
 import "./PointCloud.css";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -39,11 +37,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
 }) => {
   const viewerRef = useRef<HTMLDivElement>(null);
   const viewerId = "pointcloud-viewer";
-  const [batteryLevel, setBatteryLevel] = useState<number>(100);
-  const [isConnected, setIsConnected] = useState<boolean>(false);
-  const batteryListenerRef = useRef<ROSLIB.Topic | null>(null);
   const tfClientRef = useRef<ROSLIB.TFClient | null>(null);
-  const animationFrameRef = useRef<number>(0);
   const stats = new Stats();
   let scene: THREE.Scene;
   let renderer: THREE.WebGLRenderer;
@@ -56,8 +50,10 @@ const PointCloud: React.FC<PointCloudProps> = ({
     vertexColors: true, // 若启用需确认颜色数据存在
     transparent: true, // 移动端避免透明材质（可能引发性能问题）
     alphaTest: 0.5, // 解决边缘锯齿
+    sizeAttenuation: false
   });
   let pointCloud = new THREE.Points(particlesGeometry, particlesMaterial);
+  pointCloud.frustumCulled = false;
 
   // 添加STL模型和轨迹线的引用
   const stlModelRef = useRef<THREE.Mesh | null>(null);
@@ -86,7 +82,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
   // 添加轨迹线对象引用
   const odometryTrajectoryRef = useRef<THREE.Line | null>(null);
   // 设置轨迹线最大长度
-  const maxTrajectoryLength = 1000;
+  const maxTrajectoryLength = 10000;
 
   // 监听ROS连接状态变化
   useEffect(() => {
@@ -159,7 +155,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
               );
               stlModelRef.current.updateMatrixWorld(true);
             }
-            
+
             // 添加轨迹点并更新轨迹线
             updateTrajectory(position);
           }
@@ -199,23 +195,25 @@ const PointCloud: React.FC<PointCloudProps> = ({
   // 添加更新轨迹的函数
   const updateTrajectory = (position: any) => {
     if (!scene) return;
-    
+
     // 创建新的轨迹点
     const newPoint = new THREE.Vector3(position.x, position.y, position.z);
-    
+
     // 将新点添加到轨迹点数组
     trajectoryPointsRef.current.push(newPoint);
-    
+
     // 如果轨迹点超过最大长度，移除最早的点
     if (trajectoryPointsRef.current.length > maxTrajectoryLength) {
       trajectoryPointsRef.current.shift();
     }
-    
+
     // 更新或创建轨迹线
     if (trajectoryPointsRef.current.length > 1) {
       // 创建轨迹线几何体
-      const geometry = new THREE.BufferGeometry().setFromPoints(trajectoryPointsRef.current);
-      
+      const geometry = new THREE.BufferGeometry().setFromPoints(
+        trajectoryPointsRef.current
+      );
+
       // 如果轨迹线已存在，更新几何体
       if (odometryTrajectoryRef.current) {
         odometryTrajectoryRef.current.geometry.dispose();
@@ -224,16 +222,16 @@ const PointCloud: React.FC<PointCloudProps> = ({
         // 创建轨迹线材质
         const material = new THREE.LineBasicMaterial({
           color: 0x00ff00, // 绿色轨迹线
-          linewidth: 2,
+          linewidth: 4,
         });
-        
+
         // 创建轨迹线
         const trajectoryLine = new THREE.Line(geometry, material);
         trajectoryLine.name = "OdometryTrajectory";
-        
+
         // 添加到场景
         scene.add(trajectoryLine);
-        
+
         // 保存轨迹线引用
         odometryTrajectoryRef.current = trajectoryLine;
       }
@@ -246,14 +244,14 @@ const PointCloud: React.FC<PointCloudProps> = ({
       rosService.unsubscribeTopic(odometryListenerRef.current);
       odometryListenerRef.current = null;
     }
-    
+
     // 清理轨迹线
     if (odometryTrajectoryRef.current && scene) {
       scene.remove(odometryTrajectoryRef.current);
       odometryTrajectoryRef.current.geometry.dispose();
       odometryTrajectoryRef.current = null;
     }
-    
+
     // 清空轨迹点数组
     trajectoryPointsRef.current = [];
 
@@ -425,7 +423,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
         75,
         window.innerWidth / window.innerHeight,
         0.01,
-        150000
+        15000
       );
 
       // const aspect = window.innerWidth / window.innerHeight;
@@ -470,6 +468,9 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
     const gridHelper = new THREE.GridHelper(10, 10);
     scene.add(gridHelper);
+
+    const cameraHelper = new THREE.CameraHelper(camera);
+    scene.add(cameraHelper);
 
     // Controls setup
     // 初始化控制器（需传入相机和渲染器 DOM）
@@ -599,7 +600,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     // 执行STL模型加载
     loadSTLModel();
 
-    createTrajectory();
+    // createTrajectory();
 
     // 添加光源以便能够看到STL模型
     const ambientLight = new THREE.AmbientLight(0x404040, 1);
@@ -616,6 +617,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     // Create point cloud
     if (!pointCloud) {
       pointCloud = new THREE.Points(particlesGeometry, particlesMaterial);
+      pointCloud.frustumCulled = false;
     }
     scene.add(pointCloud);
 
@@ -688,7 +690,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     const fpsCounter = new FPSCounter();
 
     // 创建轨迹曲线并保存引用
-    const { curve } = createTrajectory();
+    // const { curve } = createTrajectory();
 
     // 动画参数
     let progress = 0; // 轨迹进度，0-1之间
