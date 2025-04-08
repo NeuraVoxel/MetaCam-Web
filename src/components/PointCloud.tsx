@@ -50,7 +50,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     vertexColors: true, // 若启用需确认颜色数据存在
     transparent: true, // 移动端避免透明材质（可能引发性能问题）
     alphaTest: 0.5, // 解决边缘锯齿
-    sizeAttenuation: false
+    sizeAttenuation: false,
   });
   let pointCloud = new THREE.Points(particlesGeometry, particlesMaterial);
   pointCloud.frustumCulled = false;
@@ -142,10 +142,21 @@ const PointCloud: React.FC<PointCloudProps> = ({
             // console.log(orientation, position);
 
             if (stlModelRef.current) {
+              const center = new THREE.Vector3();
+              const boundingBox = stlModelRef.current.geometry.boundingBox;
+              const mesh = stlModelRef.current;
+              if (boundingBox) {
+                boundingBox.getCenter(center);
+              } else {
+                stlModelRef.current.geometry.computeBoundingBox();
+                const boundingBox = stlModelRef.current.geometry.boundingBox;
+                boundingBox?.getCenter(center);
+              }
+
               stlModelRef.current.position.set(
-                position.x,
-                position.y,
-                position.z
+                position.x - center.x * mesh.scale.x,
+                position.y - center.y * mesh.scale.y,
+                position.z - center.z * mesh.scale.z
               );
               stlModelRef.current.quaternion.set(
                 orientation.x,
@@ -154,21 +165,25 @@ const PointCloud: React.FC<PointCloudProps> = ({
                 orientation.w
               );
               stlModelRef.current.updateMatrixWorld(true);
-              
+
               // 更新相机目标位置，始终看向STL模型
               if (controls) {
                 // 设置轨道控制器的目标为STL模型的位置
                 controls.target.set(position.x, position.y, position.z);
-                
+
                 // 确保相机与模型保持一定距离
-                const cameraOffset = new THREE.Vector3(-6, 0, 2); // 相机相对于模型的偏移量
-                const modelPosition = new THREE.Vector3(position.x, position.y, position.z);
-                
+                // const cameraOffset = new THREE.Vector3(-6, 0, 2); // 相机相对于模型的偏移量
+                // const modelPosition = new THREE.Vector3(
+                //   position.x,
+                //   position.y,
+                //   position.z
+                // );
+
                 // 计算相机新位置（模型位置 + 偏移量）
                 // const newCameraPosition = modelPosition.clone().add(cameraOffset);
                 // camera.position.copy(newCameraPosition);
                 // camera.lookAt(modelPosition);
-                
+
                 // 更新控制器
                 controls.update();
               }
@@ -532,11 +547,11 @@ const PointCloud: React.FC<PointCloudProps> = ({
             // 计算模型中心点
             const center = new THREE.Vector3();
             boundingBox.getCenter(center);
-            console.log(boundingBox);
+            // console.log(boundingBox);
 
             // 创建材质
             const material = new THREE.MeshPhongMaterial({
-              color: 0x00aaff,
+              color: 0xcdcdcd,
               specular: 0x111111,
               shininess: 200,
             });
@@ -559,6 +574,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
             // 保存模型引用
             stlModelRef.current = mesh;
+            // 创建颜色数组
             mesh.name = "STLModel";
 
             console.log("STL模型加载成功，已缩小100倍并放置在坐标系原点");
