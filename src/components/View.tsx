@@ -262,6 +262,28 @@ const View = () => {
 
   const toggleRecording = () => {
     setIsRecording(!isRecording);
+
+    try {
+      rosService
+        .callService<
+          {
+            command: string;
+            action: string;
+          },
+          { success: boolean; message: string }
+        >("/project_control", "metacam_node/ProjectControl", {
+          command: "project_control",
+          action: isRecording? "stop" :"start",
+        })
+        .then((response: any) => {
+          console.log("project_control:", response);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    } catch (error) {
+      console.error("服务调用失败:", error);
+    }
   };
 
   const openConfigModal = () => {
