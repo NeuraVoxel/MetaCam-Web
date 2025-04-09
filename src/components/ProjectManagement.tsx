@@ -54,6 +54,7 @@ const ProjectManagement: React.FC = () => {
   const cleanupSubscribers = () => {};
 
   async function setupServiceCall() {
+    const projects: Project[] = [];
     try {
       // 调用服务并等待响应
       setLoading(true);
@@ -68,21 +69,38 @@ const ProjectManagement: React.FC = () => {
         })
         .then((response: any) => {
           console.log("project_list:", response);
-          // const tasks = response.tasks;
-          const projects: Project[] = [];
-
-          response.tasks?.forEach((task: string, index: number) => {
-            const project: Project = {
-              id: index,
-              name: task,
-              thumbnailUrl: "https://via.placeholder.com/150?text=客厅",
-              createdAt: "2025-04-15 14:30",
-              pointsCount: 1250000,
-            };
-            projects.push(project);
+          const tasks: string[] = response.tasks;
+          tasks?.forEach((task: string, index: number) => {
+            rosService
+              .callService<
+                {
+                  task_name: string;
+                },
+                { success: boolean; message: string }
+              >("/project_image", "metacam_node/ProjectImage", {
+                task_name: task,
+              })
+              .then((response: any) => {
+                console.log("project_image:", response);
+                const project: Project = {
+                  id: index + 1,
+                  name: task,
+                  thumbnailUrl:
+                    `data:image/png;base64,${response.image_data}` ||
+                    "https://via.placeholder.com/150?text=客厅",
+                  createdAt: "2025-04-15 14:30",
+                  pointsCount: 1250000,
+                };
+                projects.push(project);
+                if (index === tasks.length - 1) {
+                  setProjects(projects);
+                  setLoading(false);
+                }
+              })
+              .catch((err) => {
+                console.error(err);
+              });
           });
-          setProjects(projects);
-          setLoading(false);
         })
         .catch((err) => {
           console.error(err);
