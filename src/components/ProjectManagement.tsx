@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './ProjectManagement.css';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import "./ProjectManagement.css";
+import rosService from "../services/ROSService";
 
 interface Project {
-  id: string;
+  id: number | string;
   name: string;
   thumbnailUrl: string;
-  createdAt: string;
-  pointsCount: number;
+  createdAt?: string;
+  pointsCount?: number;
 }
 
 const ProjectManagement: React.FC = () => {
@@ -17,6 +18,83 @@ const ProjectManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const unsubscribe = rosService.onConnectionChange((status) => {
+      if (status === "connected") {
+        setupSubscribers();
+        setupServiceCall();
+      } else {
+        cleanupSubscribers();
+      }
+    });
+
+    // 如果已连接，立即设置订阅
+    if (rosService.isConnected()) {
+      setupSubscribers();
+    }
+
+    // 组件卸载时清理资源
+    return () => {
+      unsubscribe();
+      cleanupSubscribers();
+    };
+  }, []);
+
+  const setupSubscribers = () => {
+    cleanupSubscribers();
+
+    try {
+      if (rosService.isConnected()) {
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // 清理订阅
+  const cleanupSubscribers = () => {};
+
+  async function setupServiceCall() {
+    try {
+      // 调用服务并等待响应
+      setLoading(true);
+      rosService
+        .callService<
+          {
+            command: string;
+          },
+          { success: boolean; message: string }
+        >("/project_list", "metacam_node/Version", {
+          command: "project_list",
+        })
+        .then((response: any) => {
+          console.log("project_list:", response);
+          // const tasks = response.tasks;
+          const projects: Project[] = [];
+
+          response.tasks?.forEach((task: string, index: number) => {
+            const project: Project = {
+              id: index,
+              name: task,
+              thumbnailUrl: "https://via.placeholder.com/150?text=客厅",
+              createdAt: "2025-04-15 14:30",
+              pointsCount: 1250000,
+            };
+            projects.push(project);
+          });
+          setProjects(projects);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error(err);
+          setLoading(false);
+        });
+    } catch (error) {
+      console.error("服务调用失败:", error);
+      setLoading(false);
+    }
+  }
+
+  /* useEffect(() => {
     // 模拟从设备获取项目列表
     const fetchProjects = async () => {
       try {
@@ -24,48 +102,48 @@ const ProjectManagement: React.FC = () => {
         // 这里应该是实际的API调用
         // const response = await fetch('http://device-ip/api/projects');
         // const data = await response.json();
-        
+
         // 模拟数据
         const mockProjects: Project[] = [
           {
-            id: '1',
-            name: '客厅扫描',
-            thumbnailUrl: 'https://via.placeholder.com/150?text=客厅',
-            createdAt: '2025-04-15 14:30',
-            pointsCount: 1250000
+            id: "1",
+            name: "客厅扫描",
+            thumbnailUrl: "https://via.placeholder.com/150?text=客厅",
+            createdAt: "2025-04-15 14:30",
+            pointsCount: 1250000,
           },
           {
-            id: '2',
-            name: '卧室建模',
-            thumbnailUrl: 'https://via.placeholder.com/150?text=卧室',
-            createdAt: '2025-04-14 10:15',
-            pointsCount: 980000
+            id: "2",
+            name: "卧室建模",
+            thumbnailUrl: "https://via.placeholder.com/150?text=卧室",
+            createdAt: "2025-04-14 10:15",
+            pointsCount: 980000,
           },
           {
-            id: '3',
-            name: '办公室测量',
-            thumbnailUrl: 'https://via.placeholder.com/150?text=办公室',
-            createdAt: '2025-04-13 16:45',
-            pointsCount: 1750000
-          }
+            id: "3",
+            name: "办公室测量",
+            thumbnailUrl: "https://via.placeholder.com/150?text=办公室",
+            createdAt: "2025-04-13 16:45",
+            pointsCount: 1750000,
+          },
         ];
-        
+
         // 延迟模拟网络请求
         setTimeout(() => {
           setProjects(mockProjects);
           setLoading(false);
         }, 1000);
       } catch (err) {
-        console.error('获取项目列表失败:', err);
-        setError('获取项目列表失败，请检查设备连接');
+        console.error("获取项目列表失败:", err);
+        setError("获取项目列表失败，请检查设备连接");
         setLoading(false);
       }
     };
 
     fetchProjects();
-  }, []);
+  }, []); */
 
-  const handleProjectClick = (projectId: string) => {
+  const handleProjectClick = (projectId: string | number) => {
     navigate(`/projects/${projectId}`);
   };
 
@@ -81,7 +159,7 @@ const ProjectManagement: React.FC = () => {
   return (
     <div className="project-management">
       <div className="header">
-        <button className="back-button" onClick={() => navigate('/')}>
+        <button className="back-button" onClick={() => navigate("/")}>
           ← 返回
         </button>
         <h1>项目管理</h1>
@@ -93,13 +171,11 @@ const ProjectManagement: React.FC = () => {
         <div className="error">{error}</div>
       ) : (
         <>
-          <div className="projects-count">
-            共 {projects.length} 个项目
-          </div>
+          <div className="projects-count">共 {projects.length} 个项目</div>
           <div className="projects-grid">
-            {projects.map(project => (
-              <div 
-                key={project.id} 
+            {projects.map((project) => (
+              <div
+                key={project.id}
                 className="project-card"
                 onClick={() => handleProjectClick(project.id)}
               >
@@ -109,7 +185,9 @@ const ProjectManagement: React.FC = () => {
                 <div className="project-info">
                   <h3>{project.name}</h3>
                   <p className="project-date">{project.createdAt}</p>
-                  <p className="project-points">{formatPointsCount(project.pointsCount)}</p>
+                  <p className="project-points">
+                    {formatPointsCount(project.pointsCount || 0)}
+                  </p>
                 </div>
               </div>
             ))}
