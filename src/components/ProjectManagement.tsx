@@ -83,7 +83,7 @@ const ProjectManagement: React.FC = () => {
               .then((response: any) => {
                 console.log("project_image:", response);
                 const project: Project = {
-                  id: index + 1,
+                  id: task,
                   name: task,
                   thumbnailUrl:
                     `data:image/png;base64,${response.image_data}` ||

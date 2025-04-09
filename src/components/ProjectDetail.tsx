@@ -58,6 +58,27 @@ const ProjectDetail: React.FC = () => {
     };
 
     if (id) {
+      try {
+        // 调用服务并等待响应
+        rosService
+          .callService<
+            {
+              task_name: string;
+            },
+            { success: boolean; message: string }
+          >("/project_cloud", "metacam_node/ProjectCloud", {
+            task_name: id,
+          })
+          .then((response: any) => {
+            console.log("project_cloud:", response);
+          })
+          .catch((err) => {
+            console.error(err);
+          });
+      } catch (error) {
+        console.error("服务调用失败:", error);
+      }
+
       fetchProjectDetails();
     }
   }, [id]);
@@ -108,14 +129,14 @@ const ProjectDetail: React.FC = () => {
 
           <div className="point-cloud-viewer">
             <h3>点云预览</h3>
-            <div className="point-cloud-container">
+            {/* <div className="point-cloud-container">
               <PointCloud
                 url={project.pointCloudUrl}
                 topic="/lidar_out"
                 width={800}
                 height={500}
               />
-            </div>
+            </div> */}
           </div>
         </div>
       ) : (
