@@ -143,20 +143,22 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
             if (stlModelRef.current) {
               const center = new THREE.Vector3();
-              const boundingBox = stlModelRef.current.geometry.boundingBox;
+              let boundingBox = stlModelRef.current.geometry.boundingBox;
               const mesh = stlModelRef.current;
               if (boundingBox) {
                 boundingBox.getCenter(center);
               } else {
                 stlModelRef.current.geometry.computeBoundingBox();
-                const boundingBox = stlModelRef.current.geometry.boundingBox;
+                boundingBox = stlModelRef.current.geometry.boundingBox;
                 boundingBox?.getCenter(center);
               }
+              const size: THREE.Vector3 = new THREE.Vector3();
+              boundingBox?.getSize(size);
 
               stlModelRef.current.position.set(
-                position.x - center.x * mesh.scale.x,
-                position.y - center.y * mesh.scale.y,
-                position.z - center.z * mesh.scale.z
+                position.x - (size.x / 2) * mesh.scale.x,
+                position.y - (size.y / 2) * mesh.scale.y,
+                position.z - (size.z / 2) * mesh.scale.z
               );
               stlModelRef.current.quaternion.set(
                 orientation.x,
