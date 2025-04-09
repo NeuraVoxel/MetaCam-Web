@@ -258,7 +258,28 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                       )
                     ) {
                       // 这里添加格式化U盘的逻辑
-                      alert("U盘格式化成功！");
+
+                      try {
+                        rosService
+                          .callService<
+                            {
+                              command: string;
+                            },
+                            { success: boolean; message: string }
+                          >("/usb_operation", "metacam_node/USBOperation", {
+                            command: "usb_operation",
+                          })
+                          .then((response: any) => {
+                            console.log("usb_operation:", response);
+                            alert("U盘格式化成功！");
+                          })
+                          .catch((err) => {
+                            console.error(err);
+                            alert("U盘格式化失败！");
+                          });
+                      } catch (error) {
+                        console.error("服务调用失败:", error);
+                      }
                     }
                   }}
                 >
