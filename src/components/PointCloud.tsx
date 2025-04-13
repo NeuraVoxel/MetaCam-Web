@@ -116,9 +116,11 @@ const PointCloud: React.FC<PointCloudProps> = ({
   const stlModelRef = useRef<THREE.Mesh | null>(null);
   const trajectoryRef = useRef<THREE.Line | null>(null);
 
-  const maxPointNumber = 1000000 * 3;
+  const maxPointNumber = 300000 * 3;
+
   let allPoints: FixedLengthArray = new FixedLengthArray(maxPointNumber);
   let allColors: FixedLengthArray = new FixedLengthArray(maxPointNumber);
+
   const fpsController = new FrameRateController(25);
   const workerRef = useRef<Worker | null>(null);
   let decodedWith: string = "no worker";
@@ -214,11 +216,18 @@ const PointCloud: React.FC<PointCloudProps> = ({
               const size: THREE.Vector3 = new THREE.Vector3();
               boundingBox?.getSize(size);
 
+              // stlModelRef.current.position.set(
+              //   position.x - (size.x / 2) * mesh.scale.x,
+              //   position.y - (size.y / 2) * mesh.scale.y,
+              //   position.z - (size.z / 2) * mesh.scale.z
+              // );
+
               stlModelRef.current.position.set(
                 position.x - (size.x / 2) * mesh.scale.x,
-                position.y - (size.y / 2) * mesh.scale.y,
-                position.z - (size.z / 2) * mesh.scale.z
+                position.y,
+                position.z
               );
+
               stlModelRef.current.quaternion.set(
                 orientation.x,
                 orientation.y,
@@ -228,8 +237,8 @@ const PointCloud: React.FC<PointCloudProps> = ({
               stlModelRef.current.updateMatrixWorld(true);
             }
 
-             // 更新相机目标位置，始终看向STL模型
-             if (controls) {
+            // 更新相机目标位置，始终看向STL模型
+            if (controls) {
               // 设置轨道控制器的目标为STL模型的位置
               controls.target.set(position.x, position.y, position.z);
 
@@ -386,10 +395,13 @@ const PointCloud: React.FC<PointCloudProps> = ({
           workerRef.current = worker;
         } else {
           decodedWith = "worker1: onmessage";
+
+          // console.time("renderPoints");
           const { points, colors } = e.data;
           allPoints.push(...points);
           allColors.push(...colors);
           renderPoints(allPoints.array, allColors.array);
+          // console.timeEnd("renderPoints");
         }
       };
 

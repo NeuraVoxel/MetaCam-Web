@@ -3,11 +3,12 @@ class FixedLengthArray {
     data: number[];
 
     constructor(maxLength = 100000) {
-        this.maxLength = maxLength; 
-        this.data = [];            
+        this.maxLength = maxLength;
+        this.data = [];
     }
 
     push(...elements: number[]) {
+
         this.data.push(...elements);
 
         if (this.data.length > this.maxLength) {
