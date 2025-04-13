@@ -98,7 +98,7 @@ function LoginPage() {
       </div>
       <h1>MetaCam</h1>
 
-      <div className="card-container">
+      <div className="card-container horizontal">
         {/* 连接设备状态 */}
         <div
           className="card-button"
@@ -108,13 +108,13 @@ function LoginPage() {
             }
           }}
         >
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <span
+          <div className="card-button" >
+            <i
               className={`status-indicator ${
-                isDeviceConnected ? "status-connected" : "status-disconnected"
+                isDeviceConnected? "status-connected" : "status-disconnected"
               }`}
             />
-            {isDeviceConnected ? "设备已连接" : "设备未连接"}
+             <span>{isDeviceConnected? "设备已连接" : "设备未连接"}</span>
           </div>
         </div>
 
@@ -131,10 +131,10 @@ function LoginPage() {
         </div>
 
         {/* 文件管理按钮 */}
-        <div className="card-button" onClick={() => alert("打开文件管理")}>
+        {/* <div className="card-button" onClick={() => alert("打开文件管理")}>
           <i>📁</i>
           <span>文件管理</span>
-        </div>
+        </div> */}
 
         {/* 开始作业按钮 */}
         <div
