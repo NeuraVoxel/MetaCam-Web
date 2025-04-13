@@ -163,7 +163,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 <span>{config.exposure || 50}</span>
               </div>
             </div>
-            <div className="config-row">
+            <div className="config-row" style={{flexDirection:"row"}}>
               <label htmlFor="autoExposure">自动曝光</label>
               <input
                 type="checkbox"
@@ -193,7 +193,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
           <div className="config-section">
             <h3>点云设置</h3>
             <div className="config-row">
-              <label htmlFor="pointSize">点大小</label>
+              <label htmlFor="pointSize">点大小:  <span>{config.pointSize}</span></label>
               <input
                 type="range"
                 id="pointSize"
@@ -203,7 +203,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 value={config.pointSize}
                 onChange={handleChange}
               />
-              <span>{config.pointSize}</span>
+             
             </div>
             <div className="config-row">
               <label htmlFor="colorMode">颜色模式</label>
@@ -222,7 +222,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
 
           <div className="config-section">
             <h3>存储设置</h3>
-            <div className="config-row">
+            {/* <div className="config-row" style={{flexDirection:"row"}}>
               <label htmlFor="autoSave">自动保存</label>
               <input
                 type="checkbox"
@@ -244,7 +244,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 onChange={handleChange}
                 disabled={!config.autoSave}
               />
-            </div>
+            </div> */}
             <div className="config-row">
               <label htmlFor="formatUsb">U盘管理</label>
               <div className="button-with-status">
@@ -285,26 +285,36 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 >
                   格式化U盘
                 </button>
-                <span className="usb-status">
+                {/* <span className="usb-status">
                   {config.usbConnected ? "已连接" : "未连接"}
-                </span>
+                </span> */}
               </div>
             </div>
           </div>
 
           <div className="config-section">
             <h3>显示设置</h3>
-            <div className="config-row">
+            <div className="config-row" style={{flexDirection:"row"}}>
               <label htmlFor="showDebugPanel">显示调试面板</label>
               <input
                 type="checkbox"
                 id="showDebugPanel"
                 name="showDebugPanel"
-                checked={config.showDebugPanel}
+                checked={config.showDebugPanel || false}
                 onChange={handleChange}
               />
             </div>
-            <div className="config-row">
+            <div className="config-row" style={{flexDirection:"row"}}>
+              <label htmlFor="showStats">显示性能监视器</label>
+              <input
+                type="checkbox"
+                id="showStats"
+                name="showStats"
+                checked={config.showStats || false}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="config-row" style={{flexDirection:"row"}}>
               <label htmlFor="processImages">处理图片</label>
               <input
                 type="checkbox"

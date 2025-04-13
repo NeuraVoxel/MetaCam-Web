@@ -22,6 +22,8 @@ const View = () => {
 
   const { disconnectROS, connectToROS, rosServerIp } = useContext(ROSContext);
 
+  
+
   // 添加引用
   const batteryListenerRef = useRef<ROSLIB.Topic | null>(null);
   const storageListenerRef = useRef<ROSLIB.Topic | null>(null);
@@ -241,6 +243,7 @@ const View = () => {
     saveInterval: 60,
     showDebugPanel: false,
     processImages: false, // 添加图片处理开关，默认开启
+    showStats: false, // 添加showStats配置项
   });
 
   // 添加相机视角状态
@@ -415,6 +418,7 @@ const View = () => {
             showDebugPanel={config.showDebugPanel}
             stlPath="/assets/8888.stl"
             cameraMode={cameraMode} // 传递相机视角模式
+            showStats={config.showStats}
           />
         </div>
 

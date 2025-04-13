@@ -81,6 +81,7 @@ interface PointCloudProps {
   showDebugPanel?: boolean; // 添加控制DebugPanel显示隐藏的属性
   stlPath?: string; // 添加STL文件路径属性
   cameraMode?: string; // 添加相机视角模式属性
+  showStats?: boolean
 }
 
 const PointCloud: React.FC<PointCloudProps> = ({
@@ -93,6 +94,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
   showDebugPanel = false,
   stlPath = "/assets/8888.stl", // 默认STL文件路径
   cameraMode = "thirdPerson", // 默认相机视角模式
+  showStats = false,
 }) => {
   const viewerRef = useRef<HTMLDivElement>(null);
   const viewerId = "pointcloud-viewer";
@@ -538,10 +540,29 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
     // Stats setup
     stats.showPanel(0);
+    stats.dom.style.position = "absolute";
+    stats.dom.style.top = "0px";
+    
+    // 根据showStats属性决定是否显示Stats组件
+    if (showStats && viewerRef.current) {
+      viewerRef.current.appendChild(stats.dom);
+    } else if (stats.dom.parentNode === viewerRef.current) {
+      viewerRef.current.removeChild(stats.dom);
+    }
+
+    // ... 现有代码 ...
+  }, [showStats]); // 添加showStats作为依赖项
+
+
+  useEffect(() => {
+    if (!viewerRef.current) return;
+
+    // Stats setup
+    stats.showPanel(0);
 
     stats.dom.style.position = "absolute";
     stats.dom.style.top = "0px";
-    viewerRef.current.appendChild(stats.dom);
+    // viewerRef.current.appendChild(stats.dom);
 
     console.log(THREE.REVISION);
 
