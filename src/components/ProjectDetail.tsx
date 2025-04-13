@@ -305,7 +305,7 @@ const ProjectDetail: React.FC = () => {
                 <button className="action-button download-button">
                   下载点云数据
                 </button>
-                <button className="action-button share-button">分享项目</button>
+                {/* <button className="action-button share-button">分享项目</button> */}
               </div>
             </div>
           </div>
