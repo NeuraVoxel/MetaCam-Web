@@ -239,7 +239,7 @@ const View = () => {
     colorMode: "height",
     autoSave: false,
     saveInterval: 60,
-    showDebugPanel: true,
+    showDebugPanel: false,
     processImages: false, // 添加图片处理开关，默认开启
   });
 
