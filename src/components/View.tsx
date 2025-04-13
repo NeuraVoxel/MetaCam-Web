@@ -423,7 +423,7 @@ const View = () => {
 
         {/* 全景预览窗口 */}
         <div className="panorama-preview">
-          <button className="close-preview">✕</button>
+          {/* <button className="close-preview">✕</button> */}
           {<canvas className="panorama-image" ref={keyframeCanvasRef}></canvas>}
           {/* <div className="panorama-image">
             {<canvas id="panorama"></canvas>}
