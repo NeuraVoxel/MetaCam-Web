@@ -247,7 +247,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
               />
             </div> */}
             <div className="config-row">
-              <label htmlFor="formatUsb">U盘管理</label>
+              {/* <label htmlFor="formatUsb">U盘管理</label> */}
               <div className="button-with-status">
                 <button
                   type="button"
