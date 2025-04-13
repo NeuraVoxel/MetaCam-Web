@@ -341,7 +341,7 @@ const View = () => {
             />
           </div>
 
-          <div className={`status-indicator ${dataCollecting ? "active" : ""}`}>
+          <div className={`collectiong-status-indicator ${dataCollecting ? "active" : ""}`}>
             数据采集中
           </div>
 
