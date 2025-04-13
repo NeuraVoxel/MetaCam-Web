@@ -243,6 +243,14 @@ const View = () => {
     processImages: false, // 添加图片处理开关，默认开启
   });
 
+  // 添加相机视角状态
+  const [cameraMode, setCameraMode] = useState("thirdPerson"); // 默认第三人称视角
+
+  // 切换相机视角函数
+  const toggleCameraMode = () => {
+    setCameraMode(cameraMode === "firstPerson" ? "thirdPerson" : "firstPerson");
+  };
+
   // 当配置变化时重新设置订阅
   useEffect(() => {
     if (rosService.isConnected()) {
@@ -404,8 +412,9 @@ const View = () => {
             height={800}
             pointSize={config.pointSize}
             colorMode={config.colorMode}
-            showDebugPanel={config.showDebugPanel} // 传递showDebugPanel属性
+            showDebugPanel={config.showDebugPanel}
             stlPath="/assets/8888.stl"
+            cameraMode={cameraMode} // 传递相机视角模式
           />
         </div>
 
@@ -434,6 +443,16 @@ const View = () => {
           </button>
           <button className="files-button">
             <span className="files-icon"></span>
+          </button>
+          {/* 添加切换相机视角按钮 */}
+          <button 
+            className={`camera-mode-button ${cameraMode}`}
+            onClick={toggleCameraMode}
+            title={cameraMode === "firstPerson" ? "切换到第三人称视角" : "切换到第一人称视角"}
+          >
+            <span className="camera-mode-icon">
+              {cameraMode === "firstPerson" ? "👁️" : "🎥"}
+            </span>
           </button>
         </div>
       </div>

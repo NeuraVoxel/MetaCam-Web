@@ -415,3 +415,35 @@
     justify-content: center;
   }
 }
+
+/* 相机模式按钮样式 */
+.camera-mode-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 2px solid #fff;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.camera-mode-button:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.camera-mode-button.firstPerson {
+  background-color: rgba(0, 100, 255, 0.7);
+}
+
+.camera-mode-button.thirdPerson {
+  background-color: rgba(0, 150, 0, 0.7);
+}
+
+.camera-mode-icon {
+  font-size: 24px;
+}

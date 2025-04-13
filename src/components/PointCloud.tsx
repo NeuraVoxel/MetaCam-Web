@@ -73,13 +73,14 @@ interface PointCloudProps {
   url: string;
   topic: string;
   frameId?: string;
-  width?: number;
-  height?: number;
+  width?: number | string;
+  height?: number | string;
   batteryTopic?: string;
   pointSize?: number;
   colorMode?: string;
   showDebugPanel?: boolean; // 添加控制DebugPanel显示隐藏的属性
   stlPath?: string; // 添加STL文件路径属性
+  cameraMode?: string; // 添加相机视角模式属性
 }
 
 const PointCloud: React.FC<PointCloudProps> = ({
@@ -91,6 +92,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
   batteryTopic = "/battery_state",
   showDebugPanel = false,
   stlPath = "/assets/8888.stl", // 默认STL文件路径
+  cameraMode = "thirdPerson", // 默认相机视角模式
 }) => {
   const viewerRef = useRef<HTMLDivElement>(null);
   const viewerId = "pointcloud-viewer";
@@ -230,28 +232,56 @@ const PointCloud: React.FC<PointCloudProps> = ({
               );
               stlModelRef.current.updateMatrixWorld(true);
 
-              // 更新相机目标位置，始终看向STL模型
-              if (controls) {
-                // 设置轨道控制器的目标为STL模型的位置
-                // controls.target.set(position.x, position.y, position.z);
+              // 更新包围盒
+              const worldBox = new THREE.Box3().setFromObject(stlModelRef.current);
+              let boxHelper = scene.getObjectByName("STLBoundingBox") as THREE.Box3Helper;
+              if (boxHelper) {
+                boxHelper.box.copy(worldBox);
+              } else {
+                boxHelper = new THREE.Box3Helper(worldBox, 0xff0000);
+                boxHelper.name = "STLBoundingBox";
+                scene.add(boxHelper);
+              }
 
-                // 确保相机与模型保持一定距离
-                // const cameraOffset = new THREE.Vector3(-6, 0, 2); // 相机相对于模型的偏移量
-                // const modelPosition = new THREE.Vector3(
-                //   position.x,
-                //   position.y,
-                //   position.z
-                // );
+              // 实现第三人称视角
+              if (camera && controls) {
+                // 计算模型的朝向向量（基于四元数）
+                const modelDirection = new THREE.Vector3(0, 1, 0).applyQuaternion(
+                  stlModelRef.current.quaternion
+                );
+                
+                // 设置相机偏移量（后方偏上）
+                const cameraOffset = new THREE.Vector3(-5, 2, 2);
+                
+                // 计算相机位置（模型位置 + 根据模型朝向旋转后的偏移量）
+                const cameraPosition = new THREE.Vector3().copy(stlModelRef.current.position);
+                cameraPosition.sub(modelDirection.clone().multiplyScalar(cameraOffset.x));
+                cameraPosition.y += cameraOffset.y;
+                cameraPosition.z += cameraOffset.z;
+                
+                // 更新相机位置
+                camera.position.copy(cameraPosition);
+                
+                // 设置相机目标为模型位置
+                controls.target.copy(stlModelRef.current.position);
+                
+                // 禁用控制器的自动更新，由我们手动控制
+                controls.enabled = false;
+                
+                // 手动更新控制器
+                controls.update();
 
-                // 计算相机新位置（模型位置 + 偏移量）
-                // const newCameraPosition = modelPosition.clone().add(cameraOffset);
-                // camera.position.copy(newCameraPosition);
-                // camera.lookAt(modelPosition);
-
-                // 更新控制器
-                // controls.update();
+                console.log("相机模式已切换为:", cameraMode);
+                // 当相机模式变化时，如果是第一人称视角，需要重新设置控制器
+                  if (cameraMode === "firstPerson") {
+                    controls.enabled = false; // 在第一人称模式下禁用轨道控制器
+                  } else {
+                    controls.enabled = true; // 在第三人称模式下启用轨道控制器
+                  }
               }
             }
+
+           
 
             // 添加轨迹点并更新轨迹线
             updateTrajectory(position);
@@ -882,7 +912,8 @@ const PointCloud: React.FC<PointCloudProps> = ({
       particlesGeometry.dispose();
       particlesMaterial.dispose();
     };
-  }, [stlPath]);
+  }, [stlPath,cameraMode]);
+
 
   const renderPoints = (points: any, colors: any) => {
     if (points.length === 0) {
