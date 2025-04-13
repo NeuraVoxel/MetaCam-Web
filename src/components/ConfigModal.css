@@ -16,11 +16,13 @@
   background-color: #222;
   border-radius: 8px;
   width: 90%;
+  height: 100%;
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   color: #fff;
+  /* min-height: fit-content; */
 }
 
 .config-modal-header {

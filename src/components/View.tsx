@@ -239,7 +239,7 @@ const View = () => {
     colorMode: "height",
     autoSave: false,
     saveInterval: 60,
-    showDebugPanel: false,
+    showDebugPanel: true,
     processImages: false, // 添加图片处理开关，默认开启
   });
 
@@ -406,7 +406,8 @@ useEffect(() => {
             pointSize={config.pointSize}
             colorMode={config.colorMode}
             showDebugPanel={config.showDebugPanel} // 传递showDebugPanel属性
-            stlPath="/assets/8888.stl"
+            // stlPath="/assets/8888.stl"
+            stlPath="http://192.168.1.11:8080/assets/8888.stl"
           />
         </div>
 
