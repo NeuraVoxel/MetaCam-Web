@@ -144,10 +144,25 @@
 }
 
 .point-cloud-container {
-  height: 100%;
-  border-radius: 4px;
+  width: 100%;
+  height: 500px;
+  border-radius: 8px;
   overflow: hidden;
-  background-color: #f5f5f5;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 16px;
+  position: relative; /* 添加相对定位，作为画布的定位上下文 */
+}
+
+.point-cloud-canvas {
+  width: 100%;
+  height: 100%;
+  background-color: #111;
+  display: block; /* 防止画布底部出现间隙 */
+  position: absolute; /* 使用绝对定位填充容器 */
+  top: 0;
+  left: 0;
+  outline: none; /* 移除点击时的轮廓 */
+  touch-action: none; /* 改善移动设备上的触摸体验 */
 }
 
 /* 增强响应式设计 */

@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PointCloud from "./PointCloud";
 import "./ProjectDetail.css";
 import rosService from "../services/ROSService";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { PCDLoader } from "three/examples/jsm/loaders/PCDLoader";
 
 interface ProjectDetails {
   id: string;
@@ -20,6 +23,137 @@ const ProjectDetail: React.FC = () => {
   const [project, setProject] = useState<ProjectDetails | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // 添加Three.js相关引用
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
+  const pointCloudRef = useRef<THREE.Points | null>(null);
+
+  // 初始化Three.js场景
+  const initThreeJS = () => {
+    if (!canvasRef.current) return;
+
+    // 创建场景
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x111111);
+    sceneRef.current = scene;
+
+    // 创建相机
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      canvasRef.current.clientWidth / canvasRef.current.clientHeight,
+      0.1,
+      1000
+    );
+    camera.position.set(0, 0, 5);
+    cameraRef.current = camera;
+
+    // 创建渲染器
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvasRef.current,
+      antialias: true
+    });
+    renderer.setSize(canvasRef.current.clientWidth, canvasRef.current.clientHeight);
+    rendererRef.current = renderer;
+
+    // 添加轨道控制器
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controlsRef.current = controls;
+
+    // 添加坐标轴辅助
+    const axesHelper = new THREE.AxesHelper(5);
+    scene.add(axesHelper);
+
+    // 添加环境光
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    // 添加平行光
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(1, 1, 1);
+    scene.add(directionalLight);
+
+    // 加载PCD文件
+    loadPCDFile();
+
+    // 开始动画循环
+    animate();
+  };
+
+  // 加载PCD文件
+  const loadPCDFile = () => {
+    const loader = new PCDLoader();
+    loader.load('/assets/preview.pcd', (points) => {
+      if (sceneRef.current) {
+        // 移除之前的点云
+        if (pointCloudRef.current) {
+          sceneRef.current.remove(pointCloudRef.current);
+        }
+        
+        // 添加新的点云
+        sceneRef.current.add(points);
+        pointCloudRef.current = points;
+        
+        // 调整相机位置以适应点云
+        if (cameraRef.current && controlsRef.current) {
+          const box = new THREE.Box3().setFromObject(points);
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+          
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const fov = cameraRef.current.fov * (Math.PI / 180);
+          let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+          
+          cameraZ *= 1.5; // 增加一些距离，以便更好地查看
+          
+          cameraRef.current.position.set(center.x, center.y, center.z + cameraZ);
+          cameraRef.current.lookAt(center);
+          cameraRef.current.updateProjectionMatrix();
+          
+          controlsRef.current.target.copy(center);
+          controlsRef.current.update();
+        }
+      }
+    }, 
+    (xhr) => {
+      console.log((xhr.loaded / xhr.total * 100) + '% 已加载');
+    },
+    (error) => {
+      console.error('加载PCD文件时出错:', error);
+      setError('加载点云数据失败');
+    });
+  };
+
+  // 动画循环
+  const animate = () => {
+    if (!sceneRef.current || !cameraRef.current || !rendererRef.current) return;
+    
+    requestAnimationFrame(animate);
+    
+    if (controlsRef.current) {
+      controlsRef.current.update();
+    }
+    
+    rendererRef.current.render(sceneRef.current, cameraRef.current);
+  };
+
+  // 处理窗口大小变化
+  const handleResize = () => {
+    if (!canvasRef.current || !cameraRef.current || !rendererRef.current) return;
+    
+    const width = canvasRef.current.clientWidth;
+    const height = canvasRef.current.clientHeight;
+    
+    cameraRef.current.aspect = width / height;
+    cameraRef.current.updateProjectionMatrix();
+    
+    rendererRef.current.setSize(width, height);
+  };
 
   useEffect(() => {
     // 模拟从设备获取项目详情
@@ -83,6 +217,39 @@ const ProjectDetail: React.FC = () => {
     }
   }, [id]);
 
+  // 初始化Three.js
+  useEffect(() => {
+    if (!loading && project) {
+      initThreeJS();
+      
+      // 添加窗口大小变化监听
+      window.addEventListener('resize', handleResize);
+      
+      // 清理函数
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        
+        // 清理Three.js资源
+        if (rendererRef.current) {
+          rendererRef.current.dispose();
+        }
+        
+        if (pointCloudRef.current) {
+          if (pointCloudRef.current.geometry) {
+            pointCloudRef.current.geometry.dispose();
+          }
+          if (pointCloudRef.current.material) {
+            if (Array.isArray(pointCloudRef.current.material)) {
+              pointCloudRef.current.material.forEach(material => material.dispose());
+            } else {
+              pointCloudRef.current.material.dispose();
+            }
+          }
+        }
+      };
+    }
+  }, [loading, project]);
+
   const formatPointsCount = (count: number): string => {
     if (count >= 1000000) {
       return `${(count / 1000000).toFixed(2)}M 点`;
@@ -129,14 +296,9 @@ const ProjectDetail: React.FC = () => {
 
           <div className="point-cloud-viewer">
             <h3>点云预览</h3>
-            {/* <div className="point-cloud-container">
-              <PointCloud
-                url={project.pointCloudUrl}
-                topic="/lidar_out"
-                width={800}
-                height={500}
-              />
-            </div> */}
+            <div className="point-cloud-container">
+              <canvas ref={canvasRef} className="point-cloud-canvas"></canvas>
+            </div>
           </div>
         </div>
       ) : (
