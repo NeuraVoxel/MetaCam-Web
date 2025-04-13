@@ -14,22 +14,28 @@ import ProjectDetail from "./components/ProjectDetail";
 import { useNavigate } from "react-router-dom";
 import rosService from "./services/ROSService";
 
+// 全局ROS服务器配置
+const DEFAULT_ROS_SERVER = "192.168.117.6";
+const getRosServerUrl = () => `ws://${DEFAULT_ROS_SERVER}:9090`;
+
 // ROS连接状态上下文
 export const ROSContext = React.createContext({
   isConnected: false,
   batteryLevel: 100,
   connectToROS: (url: string) => {},
   disconnectROS: () => {},
+  rosServerIp: DEFAULT_ROS_SERVER,
+  setRosServerIp: (ip: string) => {},
 });
 
 function LoginPage() {
   const navigate = useNavigate();
   const [isDeviceConnected, setIsDeviceConnected] = useState(false);
-  const { connectToROS } = React.useContext(ROSContext);
+  const { connectToROS, rosServerIp, setRosServerIp } = React.useContext(ROSContext);
 
   // 模拟设备连接状态检查
   useEffect(() => {
-    connectToROS("ws://192.168.1.11:9090");
+    connectToROS(`ws://${rosServerIp}:9090`);
     // 监听ROS连接状态变化
     const unsubscribe = rosService.onConnectionChange((status) => {
       setIsDeviceConnected(status === "connected");
@@ -38,7 +44,7 @@ function LoginPage() {
     return () => {
       unsubscribe();
     };
-  }, []);
+  }, [rosServerIp]);
 
   const handleStart = () => {
     if (isDeviceConnected) {
@@ -74,6 +80,22 @@ function LoginPage() {
         >
           ⬇️
         </button>
+        <button
+          className="top-right-button"
+          onClick={() => {
+            const ipAddress = prompt("请输入ROS服务器IP地址", rosServerIp);
+            if (ipAddress) {
+              const url = `ws://${ipAddress}:9090`;
+              // 更新全局IP地址
+              setRosServerIp(ipAddress);
+              connectToROS(url);
+              console.log(`正在连接到ROS服务器: ${url}`);
+            }
+          }}
+          title="连接ROS服务器"
+        >
+          🔌
+        </button>
       </div>
       <h1>MetaCam</h1>
 
@@ -83,7 +105,7 @@ function LoginPage() {
           className="card-button"
           onClick={() => {
             if (!rosService.isConnected()) {
-              connectToROS("ws://192.168.1.11:9090");
+              connectToROS(`ws://${rosServerIp}:9090`);
             }
           }}
         >
@@ -132,6 +154,7 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [batteryLevel, setBatteryLevel] = useState(100);
   const batteryListenerRef = React.useRef<any>(null);
+  const [rosServerIp, setRosServerIp] = useState(DEFAULT_ROS_SERVER);
 
   async function exampleServiceCall() {
     try {
@@ -199,6 +222,8 @@ function App() {
         batteryLevel,
         connectToROS,
         disconnectROS,
+        rosServerIp,
+        setRosServerIp,
       }}
     >
       <Router>
