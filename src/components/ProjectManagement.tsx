@@ -71,35 +71,48 @@ const ProjectManagement: React.FC = () => {
           console.log("project_list:", response);
           const tasks: string[] = response.tasks;
           tasks?.forEach((task: string, index: number) => {
-            rosService
-              .callService<
-                {
-                  task_name: string;
-                },
-                { success: boolean; message: string }
-              >("/project_image", "metacam_node/ProjectImage", {
-                task_name: task,
-              })
-              .then((response: any) => {
-                console.log("project_image:", response);
-                const project: Project = {
-                  id: task,
-                  name: task,
-                  thumbnailUrl:
-                    `data:image/png;base64,${response.image_data}` ||
-                    "https://via.placeholder.com/150?text=客厅",
-                  createdAt: "2025-04-15 14:30",
-                  pointsCount: 1250000,
-                };
-                projects.push(project);
-                if (index === tasks.length - 1) {
-                  setProjects(projects);
-                  setLoading(false);
-                }
-              })
-              .catch((err) => {
-                console.error(err);
-              });
+            const project: Project = {
+              id: task,
+              name: task,
+              thumbnailUrl:
+                `data:image/png;base64,${response.image_data}` ||
+                "https://via.placeholder.com/150?text=客厅",
+              createdAt: "2025-04-15 14:30",
+              pointsCount: 1250000,
+            };
+            projects.push(project);
+            setProjects(projects);
+            setLoading(false);
+
+            // rosService
+            //   .callService<
+            //     {
+            //       task_name: string;
+            //     },
+            //     { success: boolean; message: string }
+            //   >("/project_image", "metacam_node/ProjectImage", {
+            //     task_name: task,
+            //   })
+            //   .then((response: any) => {
+            //     console.log("project_image:", response);
+            //     const project: Project = {
+            //       id: task,
+            //       name: task,
+            //       thumbnailUrl:
+            //         `data:image/png;base64,${response.image_data}` ||
+            //         "https://via.placeholder.com/150?text=客厅",
+            //       createdAt: "2025-04-15 14:30",
+            //       pointsCount: 1250000,
+            //     };
+            //     projects.push(project);
+            //     if (index === tasks.length - 1) {
+            //       setProjects(projects);
+            //       setLoading(false);
+            //     }
+            //   })
+            //   .catch((err) => {
+            //     console.error(err);
+            //   });
           });
         })
         .catch((err) => {
