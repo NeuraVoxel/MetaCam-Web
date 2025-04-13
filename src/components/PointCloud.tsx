@@ -81,7 +81,7 @@ interface PointCloudProps {
   showDebugPanel?: boolean; // 添加控制DebugPanel显示隐藏的属性
   stlPath?: string; // 添加STL文件路径属性
   cameraMode?: string; // 添加相机视角模式属性
-  showStats?: boolean
+  showStats?: boolean;
 }
 
 const PointCloud: React.FC<PointCloudProps> = ({
@@ -235,8 +235,12 @@ const PointCloud: React.FC<PointCloudProps> = ({
               stlModelRef.current.updateMatrixWorld(true);
 
               // 更新包围盒
-              const worldBox = new THREE.Box3().setFromObject(stlModelRef.current);
-              let boxHelper = scene.getObjectByName("STLBoundingBox") as THREE.Box3Helper;
+              const worldBox = new THREE.Box3().setFromObject(
+                stlModelRef.current
+              );
+              let boxHelper = scene.getObjectByName(
+                "STLBoundingBox"
+              ) as THREE.Box3Helper;
               if (boxHelper) {
                 boxHelper.box.copy(worldBox);
               } else {
@@ -248,32 +252,36 @@ const PointCloud: React.FC<PointCloudProps> = ({
               // 实现第三人称视角
               if (camera && !controls.enabled) {
                 // 计算模型的朝向向量（基于四元数）
-                const modelDirection = new THREE.Vector3(0, 1, 0).applyQuaternion(
-                  stlModelRef.current.quaternion
-                );
-                
+                const modelDirection = new THREE.Vector3(
+                  0,
+                  1,
+                  0
+                ).applyQuaternion(stlModelRef.current.quaternion);
+
                 // 设置相机偏移量（后方偏上）
                 const cameraOffset = new THREE.Vector3(-5, 2, 2);
-                
+
                 // 计算相机位置（模型位置 + 根据模型朝向旋转后的偏移量）
-                const cameraPosition = new THREE.Vector3().copy(stlModelRef.current.position);
-                cameraPosition.sub(modelDirection.clone().multiplyScalar(cameraOffset.x));
+                const cameraPosition = new THREE.Vector3().copy(
+                  stlModelRef.current.position
+                );
+                cameraPosition.sub(
+                  modelDirection.clone().multiplyScalar(cameraOffset.x)
+                );
                 cameraPosition.y += cameraOffset.y;
                 cameraPosition.z += cameraOffset.z;
-                
+
                 // 更新相机位置
                 camera.position.copy(cameraPosition);
-                
+
                 // 设置相机目标为模型位置
                 controls.target.copy(stlModelRef.current.position);
-                
+
                 // 禁用控制器的自动更新，由我们手动控制
                 // controls.enabled = false;
-                
+
                 // 手动更新控制器
                 controls.update();
-
-               
               }
             }
 
@@ -522,8 +530,8 @@ const PointCloud: React.FC<PointCloudProps> = ({
     };
   }, [url, topic, frameId, width, height, batteryTopic]);
 
-   // 添加对cameraMode的监听
-   useEffect(() => {
+  // 添加对cameraMode的监听
+  useEffect(() => {
     console.log("相机模式已切换为:", cameraMode);
     // 当相机模式变化时，如果是第一人称视角，需要重新设置控制器
     if (controls) {
@@ -537,32 +545,16 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
   useEffect(() => {
     if (!viewerRef.current) return;
-
-    // Stats setup
-    stats.showPanel(0);
-    stats.dom.style.position = "absolute";
-    stats.dom.style.top = "0px";
-    
-    // 根据showStats属性决定是否显示Stats组件
-    if (showStats && viewerRef.current) {
-      viewerRef.current.appendChild(stats.dom);
-    } else if (stats.dom.parentNode === viewerRef.current) {
-      viewerRef.current.removeChild(stats.dom);
-    }
-
-    // ... 现有代码 ...
-  }, [showStats]); // 添加showStats作为依赖项
-
+  }, [showStats]);
 
   useEffect(() => {
     if (!viewerRef.current) return;
 
     // Stats setup
     stats.showPanel(0);
-
     stats.dom.style.position = "absolute";
     stats.dom.style.top = "0px";
-    // viewerRef.current.appendChild(stats.dom);
+    viewerRef.current.appendChild(stats.dom);
 
     console.log(THREE.REVISION);
 
@@ -939,7 +931,6 @@ const PointCloud: React.FC<PointCloudProps> = ({
       particlesMaterial.dispose();
     };
   }, [stlPath]);
-
 
   const renderPoints = (points: any, colors: any) => {
     if (points.length === 0) {
