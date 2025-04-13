@@ -304,6 +304,16 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 onChange={handleChange}
               />
             </div>
+            <div className="config-row">
+              <label htmlFor="processImages">处理图片</label>
+              <input
+                type="checkbox"
+                id="processImages"
+                name="processImages"
+                checked={config.processImages || false}
+                onChange={handleChange}
+              />
+            </div>
           </div>
 
           {/* 新增IP配置部分 */}

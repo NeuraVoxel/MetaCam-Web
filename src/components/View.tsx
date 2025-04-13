@@ -72,6 +72,11 @@ const View = () => {
           "/camera/right/jpeg",
           "sensor_msgs/CompressedImage",
           (message: any) => {
+            // 检查是否启用图片处理
+            if (!config.processImages) {
+              return; // 如果未启用图片处理，直接返回
+            }
+            
             // console.log("收到缩略图:", message);
             // console.log(keyframeCanvasRef);
             if (keyframeCanvasRef.current) {
@@ -234,8 +239,17 @@ const View = () => {
     colorMode: "height",
     autoSave: false,
     saveInterval: 60,
-    showDebugPanel: true,
+    showDebugPanel: false,
+    processImages: false, // 添加图片处理开关，默认开启
   });
+
+  
+// 当配置变化时重新设置订阅
+useEffect(() => {
+  if (rosService.isConnected()) {
+    setupSubscribers();
+  }
+}, [config.processImages]); // 仅在processImages变化时重新设置订阅
 
   useEffect(() => {
     // 模拟计时器
