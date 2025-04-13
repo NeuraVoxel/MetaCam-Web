@@ -39,6 +39,10 @@ declare module 'ros3d' {
   export class PointCloud2 {
     handleMessage: (message: any) => void;
     processMessage: (msg: any)  => void;
+    points: any;
+    points: any;
+    max_pts: any;
+    buffer: any;
     constructor(options: PointCloud2Options);
   }
 }

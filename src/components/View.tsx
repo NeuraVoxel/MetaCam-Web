@@ -87,13 +87,14 @@ const View = () => {
               }
 
               try {
-                if (message.format == "jpeg" || message.format == "png") {
+                if (message.format === "jpeg" || message.format === "png") {
                   const image = new Image();
                   image.src =
                     "data:image/" + message.format + ";base64," + message.data;
                   image.onload = function () {
                     canvas.width = image.width;
                     canvas.height = image.height;
+                    // console.log(image.width, image.height);
                     const ctx = canvas.getContext("2d");
                     ctx?.drawImage(image, 0, 0, image.width, image.height);
                   };
@@ -391,7 +392,7 @@ const View = () => {
             pointSize={config.pointSize}
             colorMode={config.colorMode}
             showDebugPanel={config.showDebugPanel} // 传递showDebugPanel属性
-            stlPath="http://192.168.1.11:8080/assets/8888.stl"
+            stlPath="/assets/8888.stl"
           />
         </div>
 

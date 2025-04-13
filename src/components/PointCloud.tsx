@@ -12,6 +12,63 @@ import FrameRateController from "../utils/FrameRateController";
 import FPSCounter from "../utils/FPSCounter";
 import rosService from "../services/ROSService";
 
+ROS3D.PointCloud2.prototype.processMessage = function (msg) {
+  return;
+  console.time("processMessage");
+  if (!this.points.setup(msg.header.frame_id, msg.point_step, msg.fields)) {
+    return;
+  }
+
+  var n,
+    pointRatio = this.points.pointRatio;
+  var bufSz = this.max_pts * msg.point_step;
+
+  if (msg.data.buffer) {
+    this.buffer = msg.data.slice(0, Math.min(msg.data.byteLength, bufSz));
+    n = Math.min(
+      (msg.height * msg.width) / pointRatio,
+      this.points.positions.array.length / 3
+    );
+  } else {
+    if (!this.buffer || this.buffer.byteLength < bufSz) {
+      this.buffer = new Uint8Array(bufSz);
+    }
+    n = decode64(msg.data, this.buffer, msg.point_step, pointRatio);
+    pointRatio = 1;
+  }
+
+  var dv = new DataView(this.buffer.buffer);
+  var littleEndian = !msg.is_bigendian;
+  var x = this.points.fields.x.offset;
+  var y = this.points.fields.y.offset;
+  var z = this.points.fields.z.offset;
+  var base, color;
+  console.log(n);
+  for (var i = 0; i < n; i++) {
+    base = i * pointRatio * msg.point_step;
+    this.points.positions.array[3 * i] = dv.getFloat32(base + x, littleEndian);
+    this.points.positions.array[3 * i + 1] = dv.getFloat32(
+      base + y,
+      littleEndian
+    );
+    this.points.positions.array[3 * i + 2] = dv.getFloat32(
+      base + z,
+      littleEndian
+    );
+
+    if (this.points.colors) {
+      color = this.points.colormap(
+        this.points.getColor(dv, base, littleEndian)
+      );
+      this.points.colors.array[3 * i] = color.r;
+      this.points.colors.array[3 * i + 1] = color.g;
+      this.points.colors.array[3 * i + 2] = color.b;
+    }
+  }
+  this.points.update(n);
+  console.timeEnd("processMessage");
+};
+
 interface PointCloudProps {
   url: string;
   topic: string;
@@ -33,8 +90,8 @@ const PointCloud: React.FC<PointCloudProps> = ({
   height = "100%",
   batteryTopic = "/battery_state",
   showDebugPanel = false,
-  // stlPath = "/models/8888.stl", // 默认STL文件路径
-  stlPath="http://192.168.1.11:8080/assets/8888.stl"
+  stlPath = "/assets/8888.stl", // 默认STL文件路径
+  // stlPath = "http://192.168.1.11:8080/assets/8888.stl",
 }) => {
   const viewerRef = useRef<HTMLDivElement>(null);
   const viewerId = "pointcloud-viewer";
@@ -116,10 +173,13 @@ const PointCloud: React.FC<PointCloudProps> = ({
     ros?.on(topic, (msg: any) => {
       if (rosService.isConnected()) {
         if (workerRef.current) {
+          
           workerRef.current.postMessage(msg);
+
           decodedWith = "worker: postMessage";
         } else {
           decodedWith = "no worker";
+
           const result = parsePointCloud(msg);
 
           allPoints.push(...result.points);
@@ -220,6 +280,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
             ros: ros!,
             topic: topic,
             tfClient: tfClientRef.current,
+            max_pts: 100000,
           });
         }
       }
@@ -441,7 +502,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
     stats.dom.style.position = "absolute";
     stats.dom.style.top = "0px";
-    // viewerRef.current.appendChild(stats.dom);
+    viewerRef.current.appendChild(stats.dom);
 
     console.log(THREE.REVISION);
 
@@ -484,8 +545,8 @@ const PointCloud: React.FC<PointCloudProps> = ({
     // 3. 创建渲染器
     if (!renderer) {
       renderer = new THREE.WebGLRenderer({
-        // antialias: false,
-        // powerPreference: "low-power",
+        antialias: false,
+        powerPreference: "low-power",
       });
     }
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -654,7 +715,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     // Create point cloud
     if (!pointCloud) {
       pointCloud = new THREE.Points(particlesGeometry, particlesMaterial);
-      pointCloud.frustumCulled = false;
+      pointCloud.frustumCulled = true;
     }
     scene.add(pointCloud);
 
@@ -724,7 +785,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     window.addEventListener("resize", handleResize);
 
     // Update the animation loop to include debug info
-    const fpsCounter = new FPSCounter();
+    // const fpsCounter = new FPSCounter();
 
     // 创建轨迹曲线并保存引用
     // const { curve } = createTrajectory();
@@ -739,7 +800,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     fpsController.start((deltaTime, frameCount) => {
       stats.begin();
 
-      const currentFPS = fpsCounter.update();
+      // const currentFPS = fpsCounter.update();
 
       // 更新STL模型位置和相机位置
       /*  if (stlModelRef.current && curve) {
@@ -781,7 +842,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
       // Update debug information
       setDebugInfo({
-        fps: currentFPS,
+        fps: 0,
         pointCount: particlesGeometry.attributes.position?.count,
         isWorkerSupported: isWorkerSupported(),
         isWorkerLoaded: isWorkerLoaded,
@@ -901,3 +962,11 @@ const PointCloud: React.FC<PointCloudProps> = ({
 };
 
 export default PointCloud;
+function decode64(
+  data: any,
+  buffer: any,
+  point_step: any,
+  pointRatio: any
+): any {
+  throw new Error("Function not implemented.");
+}

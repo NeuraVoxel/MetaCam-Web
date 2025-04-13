@@ -3,11 +3,14 @@
 declare const self: DedicatedWorkerGlobalScope;
 
 const parsePointCloud = (msg: any) => {
+  // console.time('parsePointCloud');
   const buffer = new Uint8Array(msg.data).buffer;
   const dataView = new DataView(buffer);
 
   const points: number[] = [];
   const colors: number[] = [];
+
+  // console.log(msg.width);
 
   for (let i = 0; i < msg.width; i++) {
     const pointOffset = i * msg.point_step;
@@ -35,6 +38,7 @@ const parsePointCloud = (msg: any) => {
       }
     });
   }
+  // console.timeEnd('parsePointCloud');
 
   return {
     points,

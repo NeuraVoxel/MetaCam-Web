@@ -79,7 +79,14 @@ function LoginPage() {
 
       <div className="card-container">
         {/* 连接设备状态 */}
-        <div className="card-button" onClick={() => alert("设备连接管理")}>
+        <div
+          className="card-button"
+          onClick={() => {
+            if (!rosService.isConnected()) {
+              connectToROS("ws://192.168.1.11:9090");
+            }
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center" }}>
             <span
               className={`status-indicator ${
@@ -126,7 +133,6 @@ function App() {
   const [batteryLevel, setBatteryLevel] = useState(100);
   const batteryListenerRef = React.useRef<any>(null);
 
-  
   async function exampleServiceCall() {
     try {
       // 调用服务并等待响应
@@ -159,7 +165,6 @@ function App() {
       if (status === "connected") {
         setupSubscribers();
         exampleServiceCall();
-        
       } else if (status === "disconnected" || status === "error") {
         cleanupSubscribers();
       }
