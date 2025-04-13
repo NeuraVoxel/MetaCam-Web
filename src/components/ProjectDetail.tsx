@@ -88,7 +88,8 @@ const ProjectDetail: React.FC = () => {
   // 加载PCD文件
   const loadPCDFile = () => {
     const loader = new PCDLoader();
-    loader.load('/assets/preview.pcd', (points) => {
+    // loader.load('/assets/preview.pcd', (points) => {
+    loader.load('http://192.168.1.11:8080/assets/preview.pcd', (points) => {
       if (sceneRef.current) {
         // 移除之前的点云
         if (pointCloudRef.current) {
