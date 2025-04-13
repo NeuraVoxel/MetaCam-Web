@@ -189,6 +189,10 @@ main {
   /* height: 12px; */
   border-radius: 50%;
   margin-right: 8px;
+  color: #fff;
+  padding: 4px 16px;
+  border-radius: 16px;
+  font-size: 14px;
 }
 
 .status-connected {

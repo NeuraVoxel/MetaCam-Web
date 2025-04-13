@@ -111,7 +111,7 @@ function LoginPage() {
           <div className="card-button" >
             <i
               className={`status-indicator ${
-                isDeviceConnected? "status-connected" : "status-disconnected"
+                isDeviceConnected? "  status-connected" : "status-disconnected"
               }`}
             />
              <span>{isDeviceConnected? "设备已连接" : "设备未连接"}</span>
