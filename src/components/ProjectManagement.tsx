@@ -210,9 +210,9 @@ const ProjectManagement: React.FC = () => {
                 className="project-card"
                 onClick={() => handleProjectClick(project.id)}
               >
-                <div className="project-thumbnail">
+                {/* <div className="project-thumbnail">
                   <img src={project.thumbnailUrl} alt={project.name} />
-                </div>
+                </div> */}
                 <div className="project-info">
                   <h3>{project.name}</h3>
                   <p className="project-date">{project.createdAt}</p>
