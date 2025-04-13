@@ -107,9 +107,10 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 value={config.resolution}
                 onChange={handleChange}
               >
-                <option value="high">高 (1920x1080)</option>
-                <option value="medium">中 (1280x720)</option>
-                <option value="low">低 (640x480)</option>
+                {/* <option value="high">高 (1920x1080)</option> */}
+                {/* <option value="medium">中 (1280x720)</option> */}
+                <option value="medium">中 (1024x1080)</option>
+                {/* <option value="low">低 (640x480)</option> */}
               </select>
             </div>
             <div className="config-row">
@@ -120,11 +121,11 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 value={config.frameRate}
                 onChange={handleChange}
               >
-                <option value="1">1 fps</option>
+                {/* <option value="1">1 fps</option> */}
                 <option value="10">10 fps</option>
-                <option value="30">30 fps</option>
-                <option value="60">60 fps</option>
-                <option value="120">120 fps</option>
+                {/* <option value="30">30 fps</option> */}
+                {/* <option value="60">60 fps</option> */}
+                {/* <option value="120">120 fps</option> */}
               </select>
             </div>
           </div>
