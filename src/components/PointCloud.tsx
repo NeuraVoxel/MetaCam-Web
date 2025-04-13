@@ -244,7 +244,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
               }
 
               // 实现第三人称视角
-              if (camera && controls) {
+              if (camera && !controls.enabled) {
                 // 计算模型的朝向向量（基于四元数）
                 const modelDirection = new THREE.Vector3(0, 1, 0).applyQuaternion(
                   stlModelRef.current.quaternion
@@ -266,22 +266,14 @@ const PointCloud: React.FC<PointCloudProps> = ({
                 controls.target.copy(stlModelRef.current.position);
                 
                 // 禁用控制器的自动更新，由我们手动控制
-                controls.enabled = false;
+                // controls.enabled = false;
                 
                 // 手动更新控制器
                 controls.update();
 
-                console.log("相机模式已切换为:", cameraMode);
-                // 当相机模式变化时，如果是第一人称视角，需要重新设置控制器
-                  if (cameraMode === "firstPerson") {
-                    controls.enabled = false; // 在第一人称模式下禁用轨道控制器
-                  } else {
-                    controls.enabled = true; // 在第三人称模式下启用轨道控制器
-                  }
+               
               }
             }
-
-           
 
             // 添加轨迹点并更新轨迹线
             updateTrajectory(position);
@@ -527,6 +519,19 @@ const PointCloud: React.FC<PointCloudProps> = ({
       }
     };
   }, [url, topic, frameId, width, height, batteryTopic]);
+
+   // 添加对cameraMode的监听
+   useEffect(() => {
+    console.log("相机模式已切换为:", cameraMode);
+    // 当相机模式变化时，如果是第一人称视角，需要重新设置控制器
+    if (controls) {
+      if (cameraMode === "firstPerson") {
+        controls.enabled = false; // 在第一人称模式下禁用轨道控制器
+      } else {
+        controls.enabled = true; // 在第三人称模式下启用轨道控制器
+      }
+    }
+  }, [cameraMode]);
 
   useEffect(() => {
     if (!viewerRef.current) return;
@@ -912,7 +917,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
       particlesGeometry.dispose();
       particlesMaterial.dispose();
     };
-  }, [stlPath,cameraMode]);
+  }, [stlPath]);
 
 
   const renderPoints = (points: any, colors: any) => {
