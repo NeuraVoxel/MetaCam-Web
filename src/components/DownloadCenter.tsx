@@ -32,36 +32,36 @@ const DownloadCenter: React.FC = () => {
     setCurrentAppVersion(localAppVersion);
 
     // 模拟获取当前固件版本
-    // setCurrentFirmwareVersion("1.2.3");
+    setCurrentFirmwareVersion("1.2.3");
 
     // 模拟从服务器获取最新版本信息
     // 实际应用中，这里应该是一个API请求
-    // setTimeout(() => {
-    //   try {
-    //     // 模拟API响应 - App版本
-    //     const mockLatestAppVersion: Version = {
-    //       version: "0.2.0",
-    //       downloadUrl: "https://www.baidu.com", // 替换为实际的下载链接
-    //       releaseDate: "2025-04-15",
-    //       description: "修复了多个bug，提升了性能，新增了点云渲染功能",
-    //     };
+    setTimeout(() => {
+      try {
+        // 模拟API响应 - App版本
+        const mockLatestAppVersion: Version = {
+          version: "0.2.0",
+          downloadUrl: "https://www.baidu.com", // 替换为实际的下载链接
+          releaseDate: "2025-04-15",
+          description: "修复了多个bug，提升了性能，新增了点云渲染功能",
+        };
 
-    //     // 模拟API响应 - 固件版本
-    //     const mockLatestFirmwareVersion: Version = {
-    //       version: "1.3.0",
-    //       downloadUrl: "https://www.baidu.com/firmware", // 替换为实际的下载链接
-    //       releaseDate: "2025-04-10",
-    //       description: "优化了传感器数据采集，提高了稳定性，修复了连接问题",
-    //     };
+        // 模拟API响应 - 固件版本
+        const mockLatestFirmwareVersion: Version = {
+          version: "1.3.0",
+          downloadUrl: "https://www.baidu.com/firmware", // 替换为实际的下载链接
+          releaseDate: "2025-04-10",
+          description: "优化了传感器数据采集，提高了稳定性，修复了连接问题",
+        };
 
-    //     setLatestAppVersion(mockLatestAppVersion);
-    //     setLatestFirmwareVersion(mockLatestFirmwareVersion);
-    //     setLoading(false);
-    //   } catch (err) {
-    //     setError("获取最新版本信息失败");
-    //     setLoading(false);
-    //   }
-    // }, 1000);
+        setLatestAppVersion(mockLatestAppVersion);
+        setLatestFirmwareVersion(mockLatestFirmwareVersion);
+        setLoading(false);
+      } catch (err) {
+        setError("获取最新版本信息失败");
+        setLoading(false);
+      }
+    }, 1000);
   }, []);
 
   // 监听ROS连接状态变化
