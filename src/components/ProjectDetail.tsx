@@ -294,9 +294,9 @@ const ProjectDetail: React.FC = () => {
             </div>
           </div>
 
-          <div className="point-cloud-viewer">
+          <div className="preview-point-cloud-viewer">
             <h3>点云预览</h3>
-            <div className="point-cloud-container">
+            <div className="preview-point-cloud-container">
               <canvas ref={canvasRef} className="point-cloud-canvas"></canvas>
             </div>
           </div>

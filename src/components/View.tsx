@@ -411,7 +411,7 @@ useEffect(() => {
         </div>
 
         {/* 中心标记 */}
-        <div className="center-marker"></div>
+        {/* <div className="center-marker"></div> */}
 
         {/* 全景预览窗口 */}
         <div className="panorama-preview">
