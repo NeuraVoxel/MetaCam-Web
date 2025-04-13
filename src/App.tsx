@@ -6,7 +6,6 @@ import {
   Navigate,
 } from "react-router-dom";
 import "./App.css";
-import PointCloud from "./components/PointCloud";
 import View from "./components/View";
 import DownloadCenter from "./components/DownloadCenter";
 import ProjectManagement from "./components/ProjectManagement";
@@ -15,8 +14,8 @@ import { useNavigate } from "react-router-dom";
 import rosService from "./services/ROSService";
 
 // 全局ROS服务器配置
-// const DEFAULT_ROS_SERVER = "192.168.117.6";
-const DEFAULT_ROS_SERVER = "192.168.1.11";
+const DEFAULT_ROS_SERVER = "192.168.117.6";
+// const DEFAULT_ROS_SERVER = "192.168.1.11";
 
 // ROS连接状态上下文
 export const ROSContext = React.createContext({

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PointCloud from "./PointCloud";
 import "./ProjectDetail.css";
@@ -6,6 +6,7 @@ import rosService from "../services/ROSService";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { PCDLoader } from "three/examples/jsm/loaders/PCDLoader";
+import { ROSContext } from "../App"; // 导入ROS上下文
 
 interface ProjectDetails {
   id: string;
@@ -23,7 +24,7 @@ const ProjectDetail: React.FC = () => {
   const [project, setProject] = useState<ProjectDetails | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // 添加Three.js相关引用
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -31,6 +32,8 @@ const ProjectDetail: React.FC = () => {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const pointCloudRef = useRef<THREE.Points | null>(null);
+
+  const { disconnectROS, connectToROS, rosServerIp } = useContext(ROSContext);
 
   // 初始化Three.js场景
   const initThreeJS = () => {
@@ -54,9 +57,12 @@ const ProjectDetail: React.FC = () => {
     // 创建渲染器
     const renderer = new THREE.WebGLRenderer({
       canvas: canvasRef.current,
-      antialias: true
+      antialias: true,
     });
-    renderer.setSize(canvasRef.current.clientWidth, canvasRef.current.clientHeight);
+    renderer.setSize(
+      canvasRef.current.clientWidth,
+      canvasRef.current.clientHeight
+    );
     rendererRef.current = renderer;
 
     // 添加轨道控制器
@@ -88,71 +94,78 @@ const ProjectDetail: React.FC = () => {
   // 加载PCD文件
   const loadPCDFile = () => {
     const loader = new PCDLoader();
-    // loader.load('/assets/preview.pcd', (points) => {
-    loader.load('http://192.168.1.11:8080/assets/preview.pcd', (points) => {
-      if (sceneRef.current) {
-        // 移除之前的点云
-        if (pointCloudRef.current) {
-          sceneRef.current.remove(pointCloudRef.current);
+    loader.load(
+      "/assets/preview.pcd",
+      (points) => {
+        if (sceneRef.current) {
+          // 移除之前的点云
+          if (pointCloudRef.current) {
+            sceneRef.current.remove(pointCloudRef.current);
+          }
+
+          // 添加新的点云
+          sceneRef.current.add(points);
+          pointCloudRef.current = points;
+
+          // 调整相机位置以适应点云
+          if (cameraRef.current && controlsRef.current) {
+            const box = new THREE.Box3().setFromObject(points);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = cameraRef.current.fov * (Math.PI / 180);
+            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+
+            cameraZ *= 1.5; // 增加一些距离，以便更好地查看
+
+            cameraRef.current.position.set(
+              center.x,
+              center.y,
+              center.z + cameraZ
+            );
+            cameraRef.current.lookAt(center);
+            cameraRef.current.updateProjectionMatrix();
+
+            controlsRef.current.target.copy(center);
+            controlsRef.current.update();
+          }
         }
-        
-        // 添加新的点云
-        sceneRef.current.add(points);
-        pointCloudRef.current = points;
-        
-        // 调整相机位置以适应点云
-        if (cameraRef.current && controlsRef.current) {
-          const box = new THREE.Box3().setFromObject(points);
-          const center = box.getCenter(new THREE.Vector3());
-          const size = box.getSize(new THREE.Vector3());
-          
-          const maxDim = Math.max(size.x, size.y, size.z);
-          const fov = cameraRef.current.fov * (Math.PI / 180);
-          let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-          
-          cameraZ *= 1.5; // 增加一些距离，以便更好地查看
-          
-          cameraRef.current.position.set(center.x, center.y, center.z + cameraZ);
-          cameraRef.current.lookAt(center);
-          cameraRef.current.updateProjectionMatrix();
-          
-          controlsRef.current.target.copy(center);
-          controlsRef.current.update();
-        }
+      },
+      (xhr) => {
+        console.log((xhr.loaded / xhr.total) * 100 + "% 已加载");
+      },
+      (error) => {
+        console.error("加载PCD文件时出错:", error);
+        setError("加载点云数据失败");
       }
-    }, 
-    (xhr) => {
-      console.log((xhr.loaded / xhr.total * 100) + '% 已加载');
-    },
-    (error) => {
-      console.error('加载PCD文件时出错:', error);
-      setError('加载点云数据失败');
-    });
+    );
   };
 
   // 动画循环
   const animate = () => {
     if (!sceneRef.current || !cameraRef.current || !rendererRef.current) return;
-    
+
     requestAnimationFrame(animate);
-    
+
     if (controlsRef.current) {
       controlsRef.current.update();
     }
-    
+
     rendererRef.current.render(sceneRef.current, cameraRef.current);
   };
 
   // 处理窗口大小变化
   const handleResize = () => {
-    if (!canvasRef.current || !cameraRef.current || !rendererRef.current) return;
-    
+    if (!canvasRef.current || !cameraRef.current || !rendererRef.current)
+      return;
+
     const width = canvasRef.current.clientWidth;
     const height = canvasRef.current.clientHeight;
-    
+
     cameraRef.current.aspect = width / height;
     cameraRef.current.updateProjectionMatrix();
-    
+
     rendererRef.current.setSize(width, height);
   };
 
@@ -177,7 +190,7 @@ const ProjectDetail: React.FC = () => {
           pointsCount: 1250000,
           description:
             "这是一个使用MetaCam采集的3D点云项目，包含完整的空间扫描数据。",
-          pointCloudUrl: "ws://192.168.1.11:9090",
+          pointCloudUrl: `ws://{rosServerIp}:9090`,
         };
 
         // 延迟模拟网络请求
@@ -222,26 +235,28 @@ const ProjectDetail: React.FC = () => {
   useEffect(() => {
     if (!loading && project) {
       initThreeJS();
-      
+
       // 添加窗口大小变化监听
-      window.addEventListener('resize', handleResize);
-      
+      window.addEventListener("resize", handleResize);
+
       // 清理函数
       return () => {
-        window.removeEventListener('resize', handleResize);
-        
+        window.removeEventListener("resize", handleResize);
+
         // 清理Three.js资源
         if (rendererRef.current) {
           rendererRef.current.dispose();
         }
-        
+
         if (pointCloudRef.current) {
           if (pointCloudRef.current.geometry) {
             pointCloudRef.current.geometry.dispose();
           }
           if (pointCloudRef.current.material) {
             if (Array.isArray(pointCloudRef.current.material)) {
-              pointCloudRef.current.material.forEach(material => material.dispose());
+              pointCloudRef.current.material.forEach((material) =>
+                material.dispose()
+              );
             } else {
               pointCloudRef.current.material.dispose();
             }

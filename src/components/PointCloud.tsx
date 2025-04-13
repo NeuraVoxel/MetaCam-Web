@@ -90,8 +90,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
   height = "100%",
   batteryTopic = "/battery_state",
   showDebugPanel = false,
-  // stlPath = "/assets/8888.stl", // 默认STL文件路径
-  stlPath = "http://192.168.1.11:8080/assets/8888.stl",
+  stlPath = "/assets/8888.stl", // 默认STL文件路径
 }) => {
   const viewerRef = useRef<HTMLDivElement>(null);
   const viewerId = "pointcloud-viewer";
@@ -173,7 +172,6 @@ const PointCloud: React.FC<PointCloudProps> = ({
     ros?.on(topic, (msg: any) => {
       if (rosService.isConnected()) {
         if (workerRef.current) {
-          
           workerRef.current.postMessage(msg);
 
           decodedWith = "worker: postMessage";
@@ -228,28 +226,28 @@ const PointCloud: React.FC<PointCloudProps> = ({
                 orientation.w
               );
               stlModelRef.current.updateMatrixWorld(true);
+            }
 
-              // 更新相机目标位置，始终看向STL模型
-              if (controls) {
-                // 设置轨道控制器的目标为STL模型的位置
-                controls.target.set(position.x, position.y, position.z);
+             // 更新相机目标位置，始终看向STL模型
+             if (controls) {
+              // 设置轨道控制器的目标为STL模型的位置
+              controls.target.set(position.x, position.y, position.z);
 
-                // 确保相机与模型保持一定距离
-                // const cameraOffset = new THREE.Vector3(-6, 0, 2); // 相机相对于模型的偏移量
-                // const modelPosition = new THREE.Vector3(
-                //   position.x,
-                //   position.y,
-                //   position.z
-                // );
+              // 确保相机与模型保持一定距离
+              // const cameraOffset = new THREE.Vector3(-6, 0, 2); // 相机相对于模型的偏移量
+              // const modelPosition = new THREE.Vector3(
+              //   position.x,
+              //   position.y,
+              //   position.z
+              // );
 
-                // 计算相机新位置（模型位置 + 偏移量）
-                // const newCameraPosition = modelPosition.clone().add(cameraOffset);
-                // camera.position.copy(newCameraPosition);
-                // camera.lookAt(modelPosition);
+              // 计算相机新位置（模型位置 + 偏移量）
+              // const newCameraPosition = modelPosition.clone().add(cameraOffset);
+              // camera.position.copy(newCameraPosition);
+              // camera.lookAt(modelPosition);
 
-                // 更新控制器
-                controls.update();
-              }
+              // 更新控制器
+              controls.update();
             }
 
             // 添加轨迹点并更新轨迹线

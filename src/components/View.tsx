@@ -20,7 +20,7 @@ const View = () => {
   const [dataCollecting, setDataCollecting] = useState(true);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
-  const { disconnectROS, connectToROS } = useContext(ROSContext);
+  const { disconnectROS, connectToROS, rosServerIp } = useContext(ROSContext);
 
   // 添加引用
   const batteryListenerRef = useRef<ROSLIB.Topic | null>(null);
@@ -76,7 +76,7 @@ const View = () => {
             if (!config.processImages) {
               return; // 如果未启用图片处理，直接返回
             }
-            
+
             // console.log("收到缩略图:", message);
             // console.log(keyframeCanvasRef);
             if (keyframeCanvasRef.current) {
@@ -219,7 +219,7 @@ const View = () => {
     if (rosService.isConnected()) {
       disconnectROS();
     } else {
-      connectToROS("ws://192.168.1.11:9090");
+      connectToROS(`ws://${rosServerIp}:9090`);
     }
   };
 
@@ -243,13 +243,12 @@ const View = () => {
     processImages: false, // 添加图片处理开关，默认开启
   });
 
-  
-// 当配置变化时重新设置订阅
-useEffect(() => {
-  if (rosService.isConnected()) {
-    setupSubscribers();
-  }
-}, [config.processImages]); // 仅在processImages变化时重新设置订阅
+  // 当配置变化时重新设置订阅
+  useEffect(() => {
+    if (rosService.isConnected()) {
+      setupSubscribers();
+    }
+  }, [config.processImages]); // 仅在processImages变化时重新设置订阅
 
   useEffect(() => {
     // 模拟计时器
@@ -288,7 +287,7 @@ useEffect(() => {
           { success: boolean; message: string }
         >("/project_control", "metacam_node/ProjectControl", {
           command: "project_control",
-          action: isRecording? "stop" :"start",
+          action: isRecording ? "stop" : "start",
         })
         .then((response: any) => {
           console.log("project_control:", response);
@@ -399,15 +398,14 @@ useEffect(() => {
         {/* 集成PointCloud组件 */}
         <div className="point-cloud-container">
           <PointCloud
-            url="ws://192.168.1.11:9090"
+            url={`ws://${rosServerIp}:9090`}
             topic="/lidar_out"
             width={1200}
             height={800}
             pointSize={config.pointSize}
             colorMode={config.colorMode}
             showDebugPanel={config.showDebugPanel} // 传递showDebugPanel属性
-            // stlPath="/assets/8888.stl"
-            stlPath="http://192.168.1.11:8080/assets/8888.stl"
+            stlPath="/assets/8888.stl"
           />
         </div>
 
