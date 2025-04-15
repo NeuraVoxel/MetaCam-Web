@@ -20,7 +20,6 @@ const DEFAULT_ROS_SERVER = "192.168.1.11";
 // ROS连接状态上下文
 export const ROSContext = React.createContext({
   isConnected: false,
-  batteryLevel: 100,
   connectToROS: (url: string) => {},
   disconnectROS: () => {},
   rosServerIp: DEFAULT_ROS_SERVER,
@@ -100,15 +99,11 @@ function LoginPage() {
 
       <div className="card-container horizontal">
         {/* 连接设备状态 */}
-        <div
-          className="card-button"
-          onClick={() => {
+          <div className="card-button" onClick={() => {
             if (!rosService.isConnected()) {
               connectToROS(`ws://${rosServerIp}:9090`);
             }
-          }}
-        >
-          <div className="card-button" >
+          }}>
             <i
               className={`status-indicator ${
                 isDeviceConnected? "  status-connected" : "status-disconnected"
@@ -116,7 +111,6 @@ function LoginPage() {
             />
              <span>{isDeviceConnected? "设备已连接" : "设备未连接"}</span>
           </div>
-        </div>
 
         {/* 项目管理按钮 - 新增 */}
         <div className="card-button" onClick={() => navigate("/projects")}>
@@ -151,8 +145,6 @@ function LoginPage() {
 
 function App() {
   const [isConnected, setIsConnected] = useState(false);
-  const [batteryLevel, setBatteryLevel] = useState(100);
-  const batteryListenerRef = React.useRef<any>(null);
   const [rosServerIp, setRosServerIp] = useState(DEFAULT_ROS_SERVER);
 
   async function exampleServiceCall() {
@@ -186,7 +178,7 @@ function App() {
       setIsConnected(status === "connected");
       if (status === "connected") {
         setupSubscribers();
-        exampleServiceCall();
+        // exampleServiceCall();
       } else if (status === "disconnected" || status === "error") {
         cleanupSubscribers();
       }
@@ -218,7 +210,6 @@ function App() {
     <ROSContext.Provider
       value={{
         isConnected,
-        batteryLevel,
         connectToROS,
         disconnectROS,
         rosServerIp,
