@@ -29,7 +29,7 @@ const DebugPanel: React.FC<DebugPanelProps> = ({ debugInfo }) => {
       <h3>Debug Information</h3>
       <div className="debug-section">
         <h4>Performance</h4>
-        {/* <p>FPS: {debugInfo.fps.toFixed(1)}</p> */}
+        <p>FPS: {debugInfo.fps.toFixed(1)}</p>
         <p>Points: {debugInfo.pointCount}</p>
         <p>isWorkerSupported: {debugInfo.isWorkerSupported ? "Yes" : "No"}</p>
         <p>isWorkerLoaded: {debugInfo.isWorkerLoaded ? "Yes" : "No"}</p>

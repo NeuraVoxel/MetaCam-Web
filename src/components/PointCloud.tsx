@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import ROSLIB from "roslib";
@@ -189,19 +190,19 @@ const PointCloud: React.FC<PointCloudProps> = ({
           decodedWith = "worker: postMessage";
         } else {
           decodedWith = "no worker";
-          console.time("parsePointCloud");
+          // console.time("parsePointCloud");
 
           const result = parsePointCloud(msg);
 
           allPoints.push(...result.points);
           allColors.push(...result.colors);
-          console.timeEnd("parsePointCloud");
+          // console.timeEnd("parsePointCloud");
 
-          console.time("renderPoints");
+          // console.time("renderPoints");
 
           renderPoints(allPoints.array, allColors.array);
 
-          console.timeEnd("renderPoints");
+          // console.timeEnd("renderPoints");
         }
       }
     });
@@ -219,48 +220,81 @@ const PointCloud: React.FC<PointCloudProps> = ({
             // console.log(orientation, position);
 
             if (stlModelRef.current) {
-              const center = new THREE.Vector3();
-              let boundingBox = stlModelRef.current.geometry.boundingBox;
-              const mesh = stlModelRef.current;
-              if (boundingBox) {
-                boundingBox.getCenter(center);
-              } else {
-                stlModelRef.current.geometry.computeBoundingBox();
-                boundingBox = stlModelRef.current.geometry.boundingBox;
-                boundingBox?.getCenter(center);
-              }
-              const size: THREE.Vector3 = new THREE.Vector3();
-              boundingBox?.getSize(size);
-
-              stlModelRef.current.position.set(
-                position.x - (size.x / 2) * mesh.scale.x,
-                position.y - (size.y / 2) * mesh.scale.y,
-                position.z - (size.z / 2) * mesh.scale.z
-              );
-
-              stlModelRef.current.quaternion.set(
+              const originalQuat = new THREE.Quaternion();
+              originalQuat.set(
                 orientation.x,
                 orientation.y,
                 orientation.z,
                 orientation.w
               );
+
+              // 构造旋转四元数
+              const qX = new THREE.Quaternion().setFromAxisAngle(
+                new THREE.Vector3(1, 0, 0),
+                Math.PI / 2 // X 轴 90 度
+              );
+
+              const qY = new THREE.Quaternion().setFromAxisAngle(
+                new THREE.Vector3(0, 1, 0),
+                Math.PI // Y 轴 180 度
+              );
+
+              // 叠加旋转
+              const newQuat = originalQuat
+                .clone()
+                .multiply(qX) // 先绕 X 轴旋转
+                .multiply(qY) // 再绕 Y 轴旋转
+                .normalize(); // 单位化
+
+              stlModelRef.current.quaternion.set(
+                newQuat.x,
+                newQuat.y,
+                newQuat.z,
+                newQuat.w
+              );
+
               stlModelRef.current.updateMatrixWorld(true);
 
-              // 更新包围盒
-              const worldBox = new THREE.Box3().setFromObject(
-                stlModelRef.current
-              );
-              let boxHelper = scene.getObjectByName(
+              const mesh = stlModelRef.current;
+
+              // const center = new THREE.Vector3();
+              // let boundingBox = mesh.geometry.boundingBox;
+
+              // if (boundingBox) {
+              //   boundingBox.getCenter(center);
+              // } else {
+              //   mesh.geometry.computeBoundingBox();
+              //   boundingBox = mesh.geometry.boundingBox;
+              //   boundingBox?.getCenter(center);
+              // }
+
+              // const size: THREE.Vector3 = new THREE.Vector3();
+              // boundingBox?.getSize(size);
+
+              // mesh.position.set(
+              //   position.x - (size.x / 2) * mesh.scale.x,
+              //   position.y - (size.y / 2) * mesh.scale.y,
+              //   position.z - (size.z / 2) * mesh.scale.z
+              // );
+
+              const modelBox = new THREE.Box3().setFromObject(mesh);
+              let modelBoxHelper = scene.getObjectByName(
                 "STLBoundingBox"
               ) as THREE.Box3Helper;
 
-              if (boxHelper) {
-                boxHelper.box.copy(worldBox);
+              if (modelBoxHelper) {
+                modelBoxHelper.box.copy(modelBox);
               } else {
-                boxHelper = new THREE.Box3Helper(worldBox, 0xff0000);
-                boxHelper.name = "STLBoundingBox";
-                scene.add(boxHelper);
+                modelBoxHelper = new THREE.Box3Helper(modelBox, 0xff0000);
+                modelBoxHelper.name = "STLBoundingBox";
+                scene.add(modelBoxHelper);
               }
+
+              mesh.position.set(
+                position.x - mesh.userData.xOffset,
+                position.y - mesh.userData.yOffset,
+                position.z - mesh.userData.zOffset
+              );
             }
 
             // 添加轨迹点并更新轨迹线
@@ -354,15 +388,15 @@ const PointCloud: React.FC<PointCloudProps> = ({
         } else {
           decodedWith = "worker1: onmessage";
 
-          console.time("worker/allPoints");
+          // console.time("worker/allPoints");
           const { points, colors } = e.data;
           allPoints.push(...points);
           allColors.push(...colors);
-          console.timeEnd("worker/allPoints");
+          // console.timeEnd("worker/allPoints");
 
-          console.time("worker/renderPoints");
+          // console.time("worker/renderPoints");
           renderPoints(allPoints.array, allColors.array);
-          console.timeEnd("worker/renderPoints");
+          // console.timeEnd("worker/renderPoints");
         }
       };
 
@@ -428,15 +462,15 @@ const PointCloud: React.FC<PointCloudProps> = ({
             workerRef.current = worker2;
           } else {
             decodedWith = "worker2: onmessage";
-            console.time("worker2/allPoints");
+            // console.time("worker2/allPoints");
             const { points, colors } = e.data;
             allPoints.push(...points);
             allColors.push(...colors);
-            console.timeEnd("worker2/allPoints");
+            // console.timeEnd("worker2/allPoints");
 
-            console.time("worker2/renderPoints");
+            // console.time("worker2/renderPoints");
             renderPoints(allPoints.array, allColors.array);
-            console.timeEnd("worker2/renderPoints");
+            // console.timeEnd("worker2/renderPoints");
           }
         };
 
@@ -481,7 +515,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
     // Stats setup
     stats.showPanel(0);
-    stats.dom.style.cssText = 'position:absolute;top:0;right:0;';
+    stats.dom.style.cssText = "position:absolute;top:0;right:0;";
     viewerRef.current.appendChild(stats.dom);
 
     console.log(THREE.REVISION);
@@ -502,24 +536,14 @@ const PointCloud: React.FC<PointCloudProps> = ({
         0.01,
         15000
       );
-
-      // const aspect = window.innerWidth / window.innerHeight;
-      // const frustumSize = 10;
-      // camera = new THREE.OrthographicCamera(
-      //   -frustumSize * aspect / 2,
-      //   frustumSize * aspect / 2,
-      //   frustumSize / 2,
-      //   -frustumSize / 2,
-      //   0.1,
-      //   1000
-      // );
     }
+
     // camera.up.set(0, 1, 0); // 默认是 (0, 1, 0) 即 Y 轴向上
     // camera.lookAt(0, 0, 0);
-    // camera.position.set(0, 20, -50);
+    // camera.position.set(10, 10, 10);
 
     camera.up.set(0, 0, 1);
-    camera.position.set(0, 100, 0); // 将相机放在Y轴上方（原Z轴方向）
+    camera.position.set(0, 5, 0); // 将相机放在Y轴上方（原Z轴方向）
     camera.lookAt(0, 0, 0);
 
     // 3. 创建渲染器
@@ -556,11 +580,11 @@ const PointCloud: React.FC<PointCloudProps> = ({
     const axesHelper = new THREE.AxesHelper(5);
     scene.add(axesHelper);
 
-    const gridHelper = new THREE.GridHelper(10, 10);
-    scene.add(gridHelper);
+    // const gridHelper = new THREE.GridHelper(10, 10);
+    // scene.add(gridHelper);
 
-    const cameraHelper = new THREE.CameraHelper(camera);
-    scene.add(cameraHelper);
+    // const cameraHelper = new THREE.CameraHelper(camera);
+    // scene.add(cameraHelper);
 
     // // 添加物体
     // const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
@@ -595,24 +619,24 @@ const PointCloud: React.FC<PointCloudProps> = ({
       // thirdPersonControls.target.set(0, 1, 0);
 
       controls = new OrbitControls(camera, renderer.domElement);
-      controls.mouseButtons = {
-        LEFT: THREE.MOUSE.ROTATE,
-        MIDDLE: THREE.MOUSE.PAN,
-        RIGHT: THREE.MOUSE.DOLLY,
-      };
+      // controls.mouseButtons = {
+      //   LEFT: THREE.MOUSE.ROTATE,
+      //   MIDDLE: THREE.MOUSE.PAN,
+      //   RIGHT: THREE.MOUSE.DOLLY,
+      // };
 
       // 关键参数配置
-      controls.enableDamping = true; // 启用阻尼惯性（提升操作流畅性）
-      controls.dampingFactor = 0.05; // 阻尼强度（值越小惯性越明显）
-      controls.enableZoom = true; // 允许缩放
-      controls.zoomSpeed = 1.5; // 缩放灵敏度
-      controls.enableRotate = true; // 允许旋转
-      controls.rotateSpeed = 0.8; // 旋转灵敏度
-      controls.enablePan = true; // 允许平移
-      controls.panSpeed = 0.5; // 平移速度
-      controls.screenSpacePanning = false; // 禁用屏幕空间平移（更适合 3D 场景）
+      // controls.enableDamping = true; // 启用阻尼惯性（提升操作流畅性）
+      // controls.dampingFactor = 0.05; // 阻尼强度（值越小惯性越明显）
+      // controls.enableZoom = true; // 允许缩放
+      // controls.zoomSpeed = 1.5; // 缩放灵敏度
+      // controls.enableRotate = true; // 允许旋转
+      // controls.rotateSpeed = 0.8; // 旋转灵敏度
+      // controls.enablePan = true; // 允许平移
+      // controls.panSpeed = 0.5; // 平移速度
+      // controls.screenSpacePanning = false; // 禁用屏幕空间平移（更适合 3D 场景）
       // controls.maxPolarAngle = Math.PI / 2 - 0.1;
-      controls.target.set(0, 1, 0);
+      controls.target.set(0, 0, 0);
     }
 
     // // 创建第一人称相机
@@ -633,9 +657,21 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
           if (boundingBox) {
             // 计算模型中心点
-            const center = new THREE.Vector3();
-            boundingBox.getCenter(center);
+            // const center = new THREE.Vector3();
+            // boundingBox.getCenter(center);
             // console.log(boundingBox);
+
+            let boxHelper = scene.getObjectByName(
+              "STLBoundingBoxOrigin"
+            ) as THREE.Box3Helper;
+
+            if (boxHelper) {
+              boxHelper.box.copy(boundingBox);
+            } else {
+              boxHelper = new THREE.Box3Helper(boundingBox, 0xff0000);
+              boxHelper.name = "STLBoundingBoxOrigin";
+              scene.add(boxHelper);
+            }
 
             // 创建材质
             const material = new THREE.MeshPhongMaterial({
@@ -646,19 +682,39 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
             // 创建网格
             const mesh = new THREE.Mesh(geometry, material);
-
-            // 将模型缩小100倍
+            // // 将模型缩小100倍
             mesh.scale.set(0.01, 0.01, 0.01);
 
+            const euler = new THREE.Euler(Math.PI / 2, Math.PI, 0, "XYZ");
+            mesh.quaternion.setFromEuler(euler);
+
+            const modelBox = new THREE.Box3().setFromObject(mesh);
+            let modelBoxHelper = scene.getObjectByName(
+              "STLBoundingBox"
+            ) as THREE.Box3Helper;
+
+            if (modelBoxHelper) {
+              modelBoxHelper.box.copy(modelBox);
+            } else {
+              modelBoxHelper = new THREE.Box3Helper(modelBox, 0xff0000);
+              modelBoxHelper.name = "STLBoundingBox";
+              scene.add(modelBoxHelper);
+            }
+
+            const center = new THREE.Vector3();
+            modelBox.getCenter(center);
+
             // 将模型放置在坐标系原点
-            mesh.position.set(
-              -center.x * mesh.scale.x,
-              -center.y * mesh.scale.y,
-              -center.z * mesh.scale.z
-            );
+            mesh.position.set(0 - center.x, 0 - center.y, 0 - center.z);
+
+            // 更新包围盒
 
             // 添加到场景
             scene.add(mesh);
+
+            mesh.userData.xOffset = center.x;
+            mesh.userData.yOffset = center.y;
+            mesh.userData.zOffset = center.z;
 
             // 保存模型引用
             stlModelRef.current = mesh;
@@ -797,7 +853,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     window.addEventListener("resize", handleResize);
 
     // Update the animation loop to include debug info
-    // const fpsCounter = new FPSCounter();
+    const fpsCounter = new FPSCounter();
 
     // 创建轨迹曲线并保存引用
     // const { curve } = createTrajectory();
@@ -811,10 +867,10 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
     fpsController.start((deltaTime, frameCount) => {
       stats.begin();
-      // const currentFPS = fpsCounter.update();
+      const currentFPS = fpsCounter.update();
       // Update debug information
       setDebugInfo({
-        fps: 0,
+        fps: currentFPS,
         pointCount: particlesGeometry.attributes.position?.count,
         isWorkerSupported: Util.isWorkerSupported(),
         isWorkerLoaded: isWorkerLoaded,
@@ -836,39 +892,32 @@ const PointCloud: React.FC<PointCloudProps> = ({
         // 实现第三人称视角
         if (camera && !controls.enabled && stlModelRef.current) {
           // 计算模型的朝向向量（基于四元数）
-          const modelDirection = new THREE.Vector3(
-            0,
-            1,
-            0
-          ).applyQuaternion(stlModelRef.current.quaternion);
-
-          // 设置相机偏移量（后方偏上）
-          const cameraOffset = new THREE.Vector3(-5, 2, 2);
-
-          // 计算相机位置（模型位置 + 根据模型朝向旋转后的偏移量）
-          const cameraPosition = new THREE.Vector3().copy(
-            stlModelRef.current.position
-          );
-          cameraPosition.sub(
-            modelDirection.clone().multiplyScalar(cameraOffset.x)
-          );
-          cameraPosition.y += cameraOffset.y;
-          cameraPosition.z += cameraOffset.z;
-
-          // 更新相机位置
-          camera.position.copy(cameraPosition);
-
-          // 设置相机目标为模型位置
-          controls.target.copy(stlModelRef.current.position);
-
+          // const modelDirection = new THREE.Vector3(0, 1, 0).applyQuaternion(
+          //   stlModelRef.current.quaternion
+          // );
+          // // 设置相机偏移量（后方偏上）
+          // const cameraOffset = new THREE.Vector3(-5, 2, 2);
+          // // 计算相机位置（模型位置 + 根据模型朝向旋转后的偏移量）
+          // const cameraPosition = new THREE.Vector3().copy(
+          //   stlModelRef.current.position
+          // );
+          // cameraPosition.sub(
+          //   modelDirection.clone().multiplyScalar(cameraOffset.x)
+          // );
+          // cameraPosition.y += cameraOffset.y;
+          // cameraPosition.z += cameraOffset.z;
+          // // 更新相机位置
+          // camera.position.copy(cameraPosition);
+          // // 设置相机目标为模型位置
+          // controls.target.copy(stlModelRef.current.position);
         }
         controls.update();
       }
 
       // 根据当前视角模式选择相机
-      if (isFirstPerson ) {
+      if (isFirstPerson) {
         controls.enabled = false;
-        if( firstPersonCameraRef.current){
+        if (firstPersonCameraRef.current) {
           renderer.render(scene, firstPersonCameraRef.current);
         }
       } else {
@@ -1020,4 +1069,3 @@ const PointCloud: React.FC<PointCloudProps> = ({
 };
 
 export default PointCloud;
-

@@ -23,7 +23,7 @@ const View = () => {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
   // useContext
-  const {  connectToROS,disconnectROS, rosServerIp } = useContext(ROSContext);
+  const { connectToROS, disconnectROS, rosServerIp } = useContext(ROSContext);
 
   // 添加引用
   const batteryListenerRef = useRef<ROSLIB.Topic | null>(null);
@@ -312,6 +312,10 @@ const View = () => {
     // 这里可以添加将配置保存到后端或本地存储的逻辑
   };
 
+  function closePanoramaPreview(e: any): void {
+    console.log("关闭全景预览",e);
+  }
+
   return (
     <div className="view-container">
       {/* 顶部状态栏 */}
@@ -331,7 +335,11 @@ const View = () => {
             />
           </div>
 
-          <div className={`collectiong-status-indicator ${dataCollecting ? "active" : ""}`}>
+          <div
+            className={`collectiong-status-indicator ${
+              dataCollecting ? "active" : ""
+            }`}
+          >
             数据采集中
           </div>
 
@@ -414,7 +422,14 @@ const View = () => {
 
         {/* 全景预览窗口 */}
         <div className="panorama-preview">
-          {/* <button className="close-preview">✕</button> */}
+          <button
+            className="close-preview"
+            onClick={(e: any) => {
+              closePanoramaPreview(e);
+            }}
+          >
+            ✕
+          </button>
           {<canvas className="panorama-image" ref={keyframeCanvasRef}></canvas>}
           {/* <div className="panorama-image">
             {<canvas id="panorama"></canvas>}
@@ -436,10 +451,14 @@ const View = () => {
             <span className="files-icon"></span>
           </button>
           {/* 添加切换相机视角按钮 */}
-          <button 
+          <button
             className={`camera-mode-button ${cameraMode}`}
             onClick={toggleCameraMode}
-            title={cameraMode === "firstPerson" ? "切换到第三人称视角" : "切换到第一人称视角"}
+            title={
+              cameraMode === "firstPerson"
+                ? "切换到第三人称视角"
+                : "切换到自由模式"
+            }
           >
             <span className="camera-mode-icon">
               {cameraMode === "firstPerson" ? "👁️" : "🎥"}
