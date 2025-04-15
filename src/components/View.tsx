@@ -11,6 +11,8 @@ import ROSLIB from "roslib";
 
 const View = () => {
   const navigate = useNavigate();
+
+  // useState
   const [isRecording, setIsRecording] = useState(false);
   const [elapsedTime, setElapsedTime] = useState("0.1h");
   const [storageSpace, setStorageSpace] = useState("167G");
@@ -20,9 +22,8 @@ const View = () => {
   const [dataCollecting, setDataCollecting] = useState(true);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
-  const { disconnectROS, connectToROS, rosServerIp } = useContext(ROSContext);
-
-  
+  // useContext
+  const {  connectToROS,disconnectROS, rosServerIp } = useContext(ROSContext);
 
   // 添加引用
   const batteryListenerRef = useRef<ROSLIB.Topic | null>(null);
@@ -30,8 +31,29 @@ const View = () => {
   const elapsedTimeListenerRef = useRef<ROSLIB.Topic | null>(null);
   const keyframeImageListenerRef = useRef<ROSLIB.Topic | null>(null);
   const driverStatusListenerRef = useRef<ROSLIB.Topic | null>(null);
-  // const odometryListenerRef = useRef<ROSLIB.Topic | null>(null);
   const keyframeCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  // 监听ROS连接状态变化
+  useEffect(() => {
+    const unsubscribe = rosService.onConnectionChange((status) => {
+      if (status === "connected") {
+        setupSubscribers();
+      } else {
+        cleanupSubscribers();
+      }
+    });
+
+    // 如果已连接，立即设置订阅
+    if (rosService.isConnected()) {
+      setupSubscribers();
+    }
+
+    // 组件卸载时清理资源
+    return () => {
+      unsubscribe();
+      cleanupSubscribers();
+    };
+  }, []);
 
   // 设置订阅
   const setupSubscribers = () => {
@@ -154,18 +176,6 @@ const View = () => {
             });
           }
         );
-
-        // // 订阅Odometry
-        // odometryListenerRef.current = rosService.subscribeTopic(
-        //   "/Odometry",
-        //   "nav_msgs/Odometry",
-        //   (message: any) => {
-        //     console.log("收到Odometry:", message);
-        //     const pose: any = message.pose?.pose;
-        //     const { orientation, position } = pose;
-        //     console.log(orientation, position);
-        //   }
-        // );
       }
     } catch (error) {
       console.error("设置电池状态订阅时出错:", error);
@@ -194,28 +204,6 @@ const View = () => {
       keyframeImageListenerRef.current = null;
     }
   };
-
-  // 监听ROS连接状态变化
-  useEffect(() => {
-    const unsubscribe = rosService.onConnectionChange((status) => {
-      if (status === "connected") {
-        setupSubscribers();
-      } else {
-        cleanupSubscribers();
-      }
-    });
-
-    // 如果已连接，立即设置订阅
-    if (rosService.isConnected()) {
-      setupSubscribers();
-    }
-
-    // 组件卸载时清理资源
-    return () => {
-      unsubscribe();
-      cleanupSubscribers();
-    };
-  }, []);
 
   const handleToggleConnection = () => {
     if (rosService.isConnected()) {
@@ -255,11 +243,11 @@ const View = () => {
   };
 
   // 当配置变化时重新设置订阅
-  useEffect(() => {
-    if (rosService.isConnected()) {
-      setupSubscribers();
-    }
-  }, [config.processImages]); // 仅在processImages变化时重新设置订阅
+  // useEffect(() => {
+  //   if (rosService.isConnected()) {
+  //     setupSubscribers();
+  //   }
+  // }, [config.processImages]); // 仅在processImages变化时重新设置订阅
 
   useEffect(() => {
     // 模拟计时器
@@ -287,7 +275,6 @@ const View = () => {
 
   const toggleRecording = () => {
     setIsRecording(!isRecording);
-
     try {
       rosService
         .callService<

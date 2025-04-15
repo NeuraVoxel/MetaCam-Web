@@ -11,6 +11,7 @@ import FixedLengthArray from "../utils/FixedLengthArray";
 import FrameRateController from "../utils/FrameRateController";
 import FPSCounter from "../utils/FPSCounter";
 import rosService from "../services/ROSService";
+import * as Util from "../utils/util";
 
 ROS3D.PointCloud2.prototype.processMessage = function (msg) {
   return;
@@ -33,7 +34,7 @@ ROS3D.PointCloud2.prototype.processMessage = function (msg) {
     if (!this.buffer || this.buffer.byteLength < bufSz) {
       this.buffer = new Uint8Array(bufSz);
     }
-    n = decode64(msg.data, this.buffer, msg.point_step, pointRatio);
+    n = Util.decode64(msg.data, this.buffer, msg.point_step, pointRatio);
     pointRatio = 1;
   }
 
@@ -83,6 +84,7 @@ interface PointCloudProps {
   cameraMode?: string; // 添加相机视角模式属性
   showStats?: boolean;
 }
+let isFirstPerson: boolean = false;
 
 const PointCloud: React.FC<PointCloudProps> = ({
   url,
@@ -121,14 +123,18 @@ const PointCloud: React.FC<PointCloudProps> = ({
   const trajectoryRef = useRef<THREE.Line | null>(null);
 
   const maxPointNumber = 300000 * 3;
-
   let allPoints: FixedLengthArray = new FixedLengthArray(maxPointNumber);
   let allColors: FixedLengthArray = new FixedLengthArray(maxPointNumber);
 
   const fpsController = new FrameRateController(25);
+
   const workerRef = useRef<Worker | null>(null);
   let decodedWith: string = "no worker";
   let isWorkerLoaded: boolean = false;
+
+  // 在组件级别定义 firstPersonCamera
+  const firstPersonCameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+
   const [debugInfo, setDebugInfo] = useState({
     fps: 0,
     pointCount: 0,
@@ -183,13 +189,19 @@ const PointCloud: React.FC<PointCloudProps> = ({
           decodedWith = "worker: postMessage";
         } else {
           decodedWith = "no worker";
+          console.time("parsePointCloud");
 
           const result = parsePointCloud(msg);
 
           allPoints.push(...result.points);
           allColors.push(...result.colors);
+          console.timeEnd("parsePointCloud");
+
+          console.time("renderPoints");
 
           renderPoints(allPoints.array, allColors.array);
+
+          console.timeEnd("renderPoints");
         }
       }
     });
@@ -322,52 +334,6 @@ const PointCloud: React.FC<PointCloudProps> = ({
     }
   };
 
-  // 添加更新轨迹的函数
-  const updateTrajectory = (position: any) => {
-    if (!scene) return;
-
-    // 创建新的轨迹点
-    const newPoint = new THREE.Vector3(position.x, position.y, position.z);
-
-    // 将新点添加到轨迹点数组
-    trajectoryPointsRef.current.push(newPoint);
-
-    // 如果轨迹点超过最大长度，移除最早的点
-    if (trajectoryPointsRef.current.length > maxTrajectoryLength) {
-      trajectoryPointsRef.current.shift();
-    }
-
-    // 更新或创建轨迹线
-    if (trajectoryPointsRef.current.length > 1) {
-      // 创建轨迹线几何体
-      const geometry = new THREE.BufferGeometry().setFromPoints(
-        trajectoryPointsRef.current
-      );
-
-      // 如果轨迹线已存在，更新几何体
-      if (odometryTrajectoryRef.current) {
-        odometryTrajectoryRef.current.geometry.dispose();
-        odometryTrajectoryRef.current.geometry = geometry;
-      } else {
-        // 创建轨迹线材质
-        const material = new THREE.LineBasicMaterial({
-          color: 0x00ff00, // 绿色轨迹线
-          linewidth: 4,
-        });
-
-        // 创建轨迹线
-        const trajectoryLine = new THREE.Line(geometry, material);
-        trajectoryLine.name = "OdometryTrajectory";
-
-        // 添加到场景
-        scene.add(trajectoryLine);
-
-        // 保存轨迹线引用
-        odometryTrajectoryRef.current = trajectoryLine;
-      }
-    }
-  };
-
   // 清理订阅
   const cleanupSubscribers = () => {
     if (odometryListenerRef.current) {
@@ -403,7 +369,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
   useEffect(() => {
     if (!viewerRef.current) return;
     // Initialize Web Worker
-    if (isWorkerSupported()) {
+    if (Util.isWorkerSupported()) {
       console.info("当前环境支持 Web Worker");
 
       let worker = new Worker(
@@ -422,12 +388,15 @@ const PointCloud: React.FC<PointCloudProps> = ({
         } else {
           decodedWith = "worker1: onmessage";
 
-          // console.time("renderPoints");
+          console.time("worker/allPoints");
           const { points, colors } = e.data;
           allPoints.push(...points);
           allColors.push(...colors);
+          console.timeEnd("worker/allPoints");
+
+          console.time("worker/renderPoints");
           renderPoints(allPoints.array, allColors.array);
-          // console.timeEnd("renderPoints");
+          console.timeEnd("worker/renderPoints");
         }
       };
 
@@ -439,50 +408,46 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
         const workerScript = `
         function parsePointCloud(msg) {
-      var buffer = new Uint8Array(msg.data).buffer;
-      var dataView = new DataView(buffer);
-  
-      var points = [];
-      var colors = [];
-  
-      for (let i = 0; i < msg.width; i++) {
-          var pointOffset = i * msg.point_step;
-  
-          msg.fields.forEach((field) => {
-              var byteOffset = pointOffset + field.offset;
-              var name = field.name;
-  
-              switch (field.datatype) {
-                  case 7:
-                      if (name === 'x' || name === 'y' || name === 'z') {
-                          points.push(dataView.getFloat32(byteOffset, !msg.is_bigendian));
-                      } else if (name === 'rgb') {
-                          var rgbInt = dataView.getUint32(byteOffset, !msg.is_bigendian);
-                          var rgb = {
-                              r: ((rgbInt >> 16) & 0xff) / 255,
-                              g: ((rgbInt >> 8) & 0xff) / 255,
-                              b: (rgbInt & 0xff) / 255
-                          };
-                          colors.push(rgb.r, rgb.g, rgb.b);
+        var buffer = new Uint8Array(msg.data).buffer;
+        var dataView = new DataView(buffer);
+        var points = [];
+        var colors = [];
+        for (let i = 0; i < msg.width; i++) {
+            var pointOffset = i * msg.point_step;
+            msg.fields.forEach((field) => {
+                var byteOffset = pointOffset + field.offset;
+                var name = field.name;
+                switch (field.datatype) {
+                    case 7:
+                        if (name === 'x' || name === 'y' || name === 'z') {
+                            points.push(dataView.getFloat32(byteOffset, !msg.is_bigendian));
+                        } else if (name === 'rgb') {
+                            var rgbInt = dataView.getUint32(byteOffset, !msg.is_bigendian);
+                            var rgb = {
+                                r: ((rgbInt >> 16) & 0xff) / 255,
+                                g: ((rgbInt >> 8) & 0xff) / 255,
+                                b: (rgbInt & 0xff) / 255
+                            };
+                            colors.push(rgb.r, rgb.g, rgb.b);
+                        }
+                        break;
                       }
-                      break;
-              }
-          });
-      }
-      return {
-          points,
-          colors
-      };
-  }
+                  });
+                }
+            return {
+              points,
+              colors
+            };
+          }
   
-  self.onmessage = (e) => {
-      const result = parsePointCloud(e.data);
-      self.postMessage(result);
-  };
-  
-  self.postMessage({
-      type: 'READY',
-  }); 
+        self.onmessage = (e) => {
+            const result = parsePointCloud(e.data);
+            self.postMessage(result);
+        };
+
+        self.postMessage({
+            type: 'READY',
+        }); 
       `;
 
         const blob = new Blob([workerScript], {
@@ -497,10 +462,15 @@ const PointCloud: React.FC<PointCloudProps> = ({
             workerRef.current = worker2;
           } else {
             decodedWith = "worker2: onmessage";
+            console.time("worker2/allPoints");
             const { points, colors } = e.data;
             allPoints.push(...points);
             allColors.push(...colors);
+            console.timeEnd("worker2/allPoints");
+
+            console.time("worker2/renderPoints");
             renderPoints(allPoints.array, allColors.array);
+            console.timeEnd("worker2/renderPoints");
           }
         };
 
@@ -532,28 +502,20 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
   // 添加对cameraMode的监听
   useEffect(() => {
+    if (!viewerRef.current) return;
     console.log("相机模式已切换为:", cameraMode);
     // 当相机模式变化时，如果是第一人称视角，需要重新设置控制器
-    if (controls) {
-      if (cameraMode === "firstPerson") {
-        controls.enabled = false; // 在第一人称模式下禁用轨道控制器
-      } else {
-        controls.enabled = true; // 在第三人称模式下启用轨道控制器
-      }
-    }
+    isFirstPerson = cameraMode === "firstPerson";
+    // console.log("isFirstPerson设置为:", cameraMode === "firstPerson", isFirstPerson);
+    // console.log("controls设置为:", controls);
   }, [cameraMode]);
-
-  useEffect(() => {
-    if (!viewerRef.current) return;
-  }, [showStats]);
 
   useEffect(() => {
     if (!viewerRef.current) return;
 
     // Stats setup
     stats.showPanel(0);
-    stats.dom.style.position = "absolute";
-    stats.dom.style.top = "0px";
+    stats.dom.style.cssText = 'position:absolute;top:0;right:0;';
     viewerRef.current.appendChild(stats.dom);
 
     console.log(THREE.REVISION);
@@ -564,7 +526,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     }
     scene.background = new THREE.Color(0x000000);
 
-    (window as any).scene = scene;
+    // (window as any).scene = scene;
 
     // 2. 创建透视相机（参数：视场角、宽高比、近裁剪面、远裁剪面）
     if (!camera) {
@@ -603,6 +565,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     }
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio); // 适配高分辨率屏幕
+    renderer.shadowMap.enabled = false;
     viewerRef.current.appendChild(renderer.domElement);
 
     const context = renderer.getContext();
@@ -610,6 +573,18 @@ const PointCloud: React.FC<PointCloudProps> = ({
     if (context.getParameter(context.VERSION).includes("WebGL 1.0")) {
       console.warn("降级到 WebGL 1.0 模式运行");
     }
+
+    // 添加光源以便能够看到STL模型
+    const ambientLight = new THREE.AmbientLight(0x404040, 1);
+    scene.add(ambientLight);
+
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight1.position.set(1, 1, 1);
+    scene.add(directionalLight1);
+
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+    directionalLight2.position.set(-1, -1, -1);
+    scene.add(directionalLight2);
 
     // 创建坐标轴辅助器，长度设为 5
     const axesHelper = new THREE.AxesHelper(5);
@@ -621,9 +596,38 @@ const PointCloud: React.FC<PointCloudProps> = ({
     const cameraHelper = new THREE.CameraHelper(camera);
     scene.add(cameraHelper);
 
+    // 添加物体
+    const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+    const material = new THREE.MeshBasicMaterial({ color: 0xcdcdcd });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    // 创建玩家角色
+    const playerGeometry = new THREE.CapsuleGeometry(0.5, 1, 4, 8);
+    const playerMaterial = new THREE.MeshStandardMaterial({
+      color: 0x3498DB,
+      roughness: 0.5,
+      metalness: 0.3
+    });
+
+    const player = new THREE.Mesh(playerGeometry, playerMaterial);
+    player.position.y = 1;
+    player.castShadow = true;
+    player.receiveShadow = true;
+    scene.add(player);
+
     // Controls setup
     // 初始化控制器（需传入相机和渲染器 DOM）
     if (!controls) {
+      // 第三人称相机控制
+      // const thirdPersonControls = new OrbitControls(camera, renderer.domElement);
+      // thirdPersonControls.enableDamping = true;
+      // thirdPersonControls.dampingFactor = 0.05;
+      // thirdPersonControls.minDistance = 3;
+      // thirdPersonControls.maxDistance = 15;
+      // thirdPersonControls.maxPolarAngle = Math.PI / 2 - 0.1;
+      // thirdPersonControls.target.set(0, 1, 0);
+
       controls = new OrbitControls(camera, renderer.domElement);
       controls.mouseButtons = {
         LEFT: THREE.MOUSE.ROTATE,
@@ -641,14 +645,16 @@ const PointCloud: React.FC<PointCloudProps> = ({
       controls.enablePan = true; // 允许平移
       controls.panSpeed = 0.5; // 平移速度
       controls.screenSpacePanning = false; // 禁用屏幕空间平移（更适合 3D 场景）
+      // controls.maxPolarAngle = Math.PI / 2 - 0.1;
+      controls.target.set(0, 1, 0);
     }
 
-    // 添加物体
-    const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-    const material = new THREE.MeshBasicMaterial({ color: 0xcdcdcd });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-
+    // 创建第一人称相机
+    if (!firstPersonCameraRef.current) {
+      firstPersonCameraRef.current = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      firstPersonCameraRef.current.position.set(0, 1.7, 0);
+      player.add(firstPersonCameraRef.current);
+    }
     // 加载STL模型
     const loadSTLModel = () => {
       const loader = new STLLoader();
@@ -752,18 +758,6 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
     // createTrajectory();
 
-    // 添加光源以便能够看到STL模型
-    const ambientLight = new THREE.AmbientLight(0x404040, 1);
-    scene.add(ambientLight);
-
-    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight1.position.set(1, 1, 1);
-    scene.add(directionalLight1);
-
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
-    directionalLight2.position.set(-1, -1, -1);
-    scene.add(directionalLight2);
-
     // Create point cloud
     if (!pointCloud) {
       pointCloud = new THREE.Points(particlesGeometry, particlesMaterial);
@@ -851,52 +845,14 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
     fpsController.start((deltaTime, frameCount) => {
       stats.begin();
-
       // const currentFPS = fpsCounter.update();
-
-      // 更新STL模型位置和相机位置
-      /*  if (stlModelRef.current && curve) {
-        // 更新进度
-        progress += speed * deltaTime;
-        if (progress > 1) progress = 0; // 循环移动
-
-        // 获取当前轨迹点位置
-        const position = curve.getPointAt(progress);
-
-        // 更新模型位置
-        stlModelRef.current.position.copy(position);
-
-        // 计算切线方向（使模型朝向运动方向）
-        const tangent = curve.getTangentAt(progress);
-        const lookAtPoint = new THREE.Vector3(
-          position.x + tangent.x,
-          position.y + tangent.y,
-          position.z + tangent.z
-        );
-        stlModelRef.current.lookAt(lookAtPoint);
-
-        // // 更新相机位置，使其跟随模型
-        // // 创建一个基于模型朝向的本地坐标系
-        // const modelDirection = new THREE.Vector3().subVectors(lookAtPoint, position).normalize();
-        // const modelRight = new THREE.Vector3(0, 1, 0).cross(modelDirection).normalize();
-        // const modelUp = new THREE.Vector3().crossVectors(modelDirection, modelRight).normalize();
-
-        // // 计算相机位置（模型后方偏上）
-        // const cameraPosition = new THREE.Vector3()
-        //   .copy(position)
-        //   .add(modelDirection.clone().multiplyScalar(-cameraOffset.z)) // 后方
-        //   .add(modelUp.clone().multiplyScalar(cameraOffset.y)); // 上方
-
-        // // 更新相机位置和朝向
-        // camera.position.copy(cameraPosition);
-        // camera.lookAt(position); // 相机始终看向模型
-      } */
+      updatePlayer();
 
       // Update debug information
       setDebugInfo({
         fps: 0,
         pointCount: particlesGeometry.attributes.position?.count,
-        isWorkerSupported: isWorkerSupported(),
+        isWorkerSupported: Util.isWorkerSupported(),
         isWorkerLoaded: isWorkerLoaded,
         decodedWith: decodedWith,
         cameraPosition: {
@@ -911,8 +867,16 @@ const PointCloud: React.FC<PointCloudProps> = ({
         },
       });
 
-      controls.update();
-      renderer.render(scene, camera);
+      // 更新第三人称控制器
+      if (!isFirstPerson) {
+        controls.update();
+      }
+      // 根据当前视角模式选择相机
+      if (isFirstPerson && firstPersonCameraRef.current) {
+        renderer.render(scene, firstPersonCameraRef.current);
+      } else {
+        renderer.render(scene, camera);
+      }
       stats.end();
     });
 
@@ -932,6 +896,19 @@ const PointCloud: React.FC<PointCloudProps> = ({
     };
   }, [stlPath]);
 
+  const updatePlayer = () => {
+    // 移动玩家
+    // if (controls) {
+    //   player.position.copy(controls.target);
+    //   player.rotation.copy(controls.getRotation());
+    // }
+    // // 相机跟随玩家
+    // if (player) {
+    //   camera.position.copy(player.position).add(cameraOffset);
+    //   camera.lookAt(player.position);
+    // }
+  };
+
   const renderPoints = (points: any, colors: any) => {
     if (points.length === 0) {
       console.warn("No valid points found in point cloud");
@@ -950,6 +927,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     particlesGeometry.attributes.position.needsUpdate = true;
     particlesGeometry.attributes.color.needsUpdate = true;
   };
+
   const parsePointCloud = (msg: any) => {
     console.log("not from web worker");
     const buffer = new Uint8Array(msg.data).buffer;
@@ -1001,8 +979,50 @@ const PointCloud: React.FC<PointCloudProps> = ({
     };
   };
 
-  const isWorkerSupported = (): boolean => {
-    return typeof window.Worker !== "undefined";
+  // 添加更新轨迹的函数
+  const updateTrajectory = (position: any) => {
+    if (!scene) return;
+
+    // 创建新的轨迹点
+    const newPoint = new THREE.Vector3(position.x, position.y, position.z);
+
+    // 将新点添加到轨迹点数组
+    trajectoryPointsRef.current.push(newPoint);
+
+    // 如果轨迹点超过最大长度，移除最早的点
+    if (trajectoryPointsRef.current.length > maxTrajectoryLength) {
+      trajectoryPointsRef.current.shift();
+    }
+
+    // 更新或创建轨迹线
+    if (trajectoryPointsRef.current.length > 1) {
+      // 创建轨迹线几何体
+      const geometry = new THREE.BufferGeometry().setFromPoints(
+        trajectoryPointsRef.current
+      );
+
+      // 如果轨迹线已存在，更新几何体
+      if (odometryTrajectoryRef.current) {
+        odometryTrajectoryRef.current.geometry.dispose();
+        odometryTrajectoryRef.current.geometry = geometry;
+      } else {
+        // 创建轨迹线材质
+        const material = new THREE.LineBasicMaterial({
+          color: 0x00ff00, // 绿色轨迹线
+          linewidth: 4,
+        });
+
+        // 创建轨迹线
+        const trajectoryLine = new THREE.Line(geometry, material);
+        trajectoryLine.name = "OdometryTrajectory";
+
+        // 添加到场景
+        scene.add(trajectoryLine);
+
+        // 保存轨迹线引用
+        odometryTrajectoryRef.current = trajectoryLine;
+      }
+    }
   };
 
   return (
@@ -1014,11 +1034,4 @@ const PointCloud: React.FC<PointCloudProps> = ({
 };
 
 export default PointCloud;
-function decode64(
-  data: any,
-  buffer: any,
-  point_step: any,
-  pointRatio: any
-): any {
-  throw new Error("Function not implemented.");
-}
+
