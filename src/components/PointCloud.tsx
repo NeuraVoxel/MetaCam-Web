@@ -277,8 +277,8 @@ const PointCloud: React.FC<PointCloudProps> = ({
               //   position.z - (size.z / 2) * mesh.scale.z
               // );
 
-              const modelBox = new THREE.Box3().setFromObject(mesh);
-              let modelBoxHelper = scene.getObjectByName(
+              /* const modelBox = new THREE.Box3().setFromObject(mesh);
+             let modelBoxHelper = scene.getObjectByName(
                 "STLBoundingBox"
               ) as THREE.Box3Helper;
 
@@ -288,7 +288,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
                 modelBoxHelper = new THREE.Box3Helper(modelBox, 0xff0000);
                 modelBoxHelper.name = "STLBoundingBox";
                 scene.add(modelBoxHelper);
-              }
+              } */
 
               mesh.position.set(
                 position.x - mesh.userData.xOffset,
@@ -661,7 +661,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
             // boundingBox.getCenter(center);
             // console.log(boundingBox);
 
-            let boxHelper = scene.getObjectByName(
+            /* let boxHelper = scene.getObjectByName(
               "STLBoundingBoxOrigin"
             ) as THREE.Box3Helper;
 
@@ -671,7 +671,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
               boxHelper = new THREE.Box3Helper(boundingBox, 0xff0000);
               boxHelper.name = "STLBoundingBoxOrigin";
               scene.add(boxHelper);
-            }
+            } */
 
             // 创建材质
             const material = new THREE.MeshPhongMaterial({
@@ -689,7 +689,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
             mesh.quaternion.setFromEuler(euler);
 
             const modelBox = new THREE.Box3().setFromObject(mesh);
-            let modelBoxHelper = scene.getObjectByName(
+            /* let modelBoxHelper = scene.getObjectByName(
               "STLBoundingBox"
             ) as THREE.Box3Helper;
 
@@ -699,7 +699,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
               modelBoxHelper = new THREE.Box3Helper(modelBox, 0xff0000);
               modelBoxHelper.name = "STLBoundingBox";
               scene.add(modelBoxHelper);
-            }
+            } */
 
             const center = new THREE.Vector3();
             modelBox.getCenter(center);
