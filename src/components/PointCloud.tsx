@@ -253,47 +253,13 @@ const PointCloud: React.FC<PointCloudProps> = ({
               let boxHelper = scene.getObjectByName(
                 "STLBoundingBox"
               ) as THREE.Box3Helper;
+
               if (boxHelper) {
                 boxHelper.box.copy(worldBox);
               } else {
                 boxHelper = new THREE.Box3Helper(worldBox, 0xff0000);
                 boxHelper.name = "STLBoundingBox";
                 scene.add(boxHelper);
-              }
-
-              // 实现第三人称视角
-              if (camera && !controls.enabled) {
-                // 计算模型的朝向向量（基于四元数）
-                const modelDirection = new THREE.Vector3(
-                  0,
-                  1,
-                  0
-                ).applyQuaternion(stlModelRef.current.quaternion);
-
-                // 设置相机偏移量（后方偏上）
-                const cameraOffset = new THREE.Vector3(-5, 2, 2);
-
-                // 计算相机位置（模型位置 + 根据模型朝向旋转后的偏移量）
-                const cameraPosition = new THREE.Vector3().copy(
-                  stlModelRef.current.position
-                );
-                cameraPosition.sub(
-                  modelDirection.clone().multiplyScalar(cameraOffset.x)
-                );
-                cameraPosition.y += cameraOffset.y;
-                cameraPosition.z += cameraOffset.z;
-
-                // 更新相机位置
-                camera.position.copy(cameraPosition);
-
-                // 设置相机目标为模型位置
-                controls.target.copy(stlModelRef.current.position);
-
-                // 禁用控制器的自动更新，由我们手动控制
-                // controls.enabled = false;
-
-                // 手动更新控制器
-                controls.update();
               }
             }
 
@@ -596,25 +562,25 @@ const PointCloud: React.FC<PointCloudProps> = ({
     const cameraHelper = new THREE.CameraHelper(camera);
     scene.add(cameraHelper);
 
-    // 添加物体
-    const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-    const material = new THREE.MeshBasicMaterial({ color: 0xcdcdcd });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+    // // 添加物体
+    // const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+    // const material = new THREE.MeshBasicMaterial({ color: 0xcdcdcd });
+    // const cube = new THREE.Mesh(geometry, material);
+    // scene.add(cube);
 
-    // 创建玩家角色
-    const playerGeometry = new THREE.CapsuleGeometry(0.5, 1, 4, 8);
-    const playerMaterial = new THREE.MeshStandardMaterial({
-      color: 0x3498DB,
-      roughness: 0.5,
-      metalness: 0.3
-    });
+    // // 创建玩家角色
+    // const playerGeometry = new THREE.CapsuleGeometry(0.5, 1, 4, 8);
+    // const playerMaterial = new THREE.MeshStandardMaterial({
+    //   color: 0x3498DB,
+    //   roughness: 0.5,
+    //   metalness: 0.3
+    // });
 
-    const player = new THREE.Mesh(playerGeometry, playerMaterial);
-    player.position.y = 1;
-    player.castShadow = true;
-    player.receiveShadow = true;
-    scene.add(player);
+    // const player = new THREE.Mesh(playerGeometry, playerMaterial);
+    // player.position.y = 1;
+    // player.castShadow = true;
+    // player.receiveShadow = true;
+    // scene.add(player);
 
     // Controls setup
     // 初始化控制器（需传入相机和渲染器 DOM）
@@ -649,12 +615,12 @@ const PointCloud: React.FC<PointCloudProps> = ({
       controls.target.set(0, 1, 0);
     }
 
-    // 创建第一人称相机
-    if (!firstPersonCameraRef.current) {
-      firstPersonCameraRef.current = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-      firstPersonCameraRef.current.position.set(0, 1.7, 0);
-      player.add(firstPersonCameraRef.current);
-    }
+    // // 创建第一人称相机
+    // if (!firstPersonCameraRef.current) {
+    //   firstPersonCameraRef.current = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    //   firstPersonCameraRef.current.position.set(0, 1.7, 0);
+    //   player.add(firstPersonCameraRef.current);
+    // }
     // 加载STL模型
     const loadSTLModel = () => {
       const loader = new STLLoader();
@@ -846,8 +812,6 @@ const PointCloud: React.FC<PointCloudProps> = ({
     fpsController.start((deltaTime, frameCount) => {
       stats.begin();
       // const currentFPS = fpsCounter.update();
-      updatePlayer();
-
       // Update debug information
       setDebugInfo({
         fps: 0,
@@ -869,14 +833,49 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
       // 更新第三人称控制器
       if (!isFirstPerson) {
+        // 实现第三人称视角
+        if (camera && !controls.enabled && stlModelRef.current) {
+          // 计算模型的朝向向量（基于四元数）
+          const modelDirection = new THREE.Vector3(
+            0,
+            1,
+            0
+          ).applyQuaternion(stlModelRef.current.quaternion);
+
+          // 设置相机偏移量（后方偏上）
+          const cameraOffset = new THREE.Vector3(-5, 2, 2);
+
+          // 计算相机位置（模型位置 + 根据模型朝向旋转后的偏移量）
+          const cameraPosition = new THREE.Vector3().copy(
+            stlModelRef.current.position
+          );
+          cameraPosition.sub(
+            modelDirection.clone().multiplyScalar(cameraOffset.x)
+          );
+          cameraPosition.y += cameraOffset.y;
+          cameraPosition.z += cameraOffset.z;
+
+          // 更新相机位置
+          camera.position.copy(cameraPosition);
+
+          // 设置相机目标为模型位置
+          controls.target.copy(stlModelRef.current.position);
+
+        }
         controls.update();
       }
+
       // 根据当前视角模式选择相机
-      if (isFirstPerson && firstPersonCameraRef.current) {
-        renderer.render(scene, firstPersonCameraRef.current);
+      if (isFirstPerson ) {
+        controls.enabled = false;
+        if( firstPersonCameraRef.current){
+          renderer.render(scene, firstPersonCameraRef.current);
+        }
       } else {
+        controls.enabled = true;
         renderer.render(scene, camera);
       }
+
       stats.end();
     });
 
@@ -895,19 +894,6 @@ const PointCloud: React.FC<PointCloudProps> = ({
       particlesMaterial.dispose();
     };
   }, [stlPath]);
-
-  const updatePlayer = () => {
-    // 移动玩家
-    // if (controls) {
-    //   player.position.copy(controls.target);
-    //   player.rotation.copy(controls.getRotation());
-    // }
-    // // 相机跟随玩家
-    // if (player) {
-    //   camera.position.copy(player.position).add(cameraOffset);
-    //   camera.lookAt(player.position);
-    // }
-  };
 
   const renderPoints = (points: any, colors: any) => {
     if (points.length === 0) {
