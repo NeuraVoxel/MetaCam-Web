@@ -84,6 +84,7 @@ interface PointCloudProps {
   stlPath?: string; // 添加STL文件路径属性
   cameraMode?: string; // 添加相机视角模式属性
   showStats?: boolean;
+  maxPointNumber?: number; // 添加最大点数配置
 }
 let isFreeMode: boolean = true;
 
@@ -98,6 +99,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
   stlPath = "/assets/8888.stl", // 默认STL文件路径
   cameraMode = "thirdPerson", // 默认相机视角模式
   showStats = false,
+  maxPointNumber = 300000, // 默认最大点数
 }) => {
   const viewerRef = useRef<HTMLDivElement>(null);
   const viewerId = "pointcloud-viewer";
@@ -123,9 +125,14 @@ const PointCloud: React.FC<PointCloudProps> = ({
   const stlModelRef = useRef<THREE.Mesh | null>(null);
   const trajectoryRef = useRef<THREE.Line | null>(null);
 
-  const maxPointNumber = 300000 * 3;
-  let allPoints: FixedLengthArray = new FixedLengthArray(maxPointNumber);
-  let allColors: FixedLengthArray = new FixedLengthArray(maxPointNumber);
+  // const maxPointNumber = 300000 * 3;
+  // let allPoints: FixedLengthArray = new FixedLengthArray(maxPointNumber);
+  // let allColors: FixedLengthArray = new FixedLengthArray(maxPointNumber);
+   // 使用传入的maxPointNumber参数
+   const totalPointNumber = maxPointNumber * 3;
+   let allPoints: FixedLengthArray = new FixedLengthArray(totalPointNumber);
+   let allColors: FixedLengthArray = new FixedLengthArray(totalPointNumber);
+ 
 
   const fpsController = new FrameRateController(25);
 

@@ -194,6 +194,16 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
           <div className="config-section">
             <h3>点云设置</h3>
             <div className="config-row">
+            <label htmlFor="maxPointNumber">点数量</label>
+              <input
+                type="number"
+                id="maxPointNumber"
+                name="maxPointNumber"
+                min="10"
+                max="3000000"
+                value={config.maxPointNumber || 100000}
+                onChange={handleChange}
+              />
               <label htmlFor="pointSize">点大小:  <span>{config.pointSize}</span></label>
               <input
                 type="range"
