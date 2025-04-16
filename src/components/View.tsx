@@ -232,6 +232,7 @@ const View = () => {
     showDebugPanel: false,
     processImages: false, // 添加图片处理开关，默认开启
     showStats: false, // 添加showStats配置项
+    maxPointNumber: 300000, // 添加showStats配置项
   });
 
   // 添加相机视角状态
@@ -414,6 +415,7 @@ const View = () => {
             stlPath="/assets/8888.stl"
             cameraMode={cameraMode} // 传递相机视角模式
             showStats={config.showStats}
+            maxPointNumber={config.maxPointNumber} // 转换为实际点数
           />
         </div>
 
