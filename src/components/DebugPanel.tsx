@@ -1,18 +1,23 @@
-import React from 'react';
-import './DebugPanel.css';
+import React from "react";
+import "./DebugPanel.css";
 
 interface DebugInfo {
   fps: number;
   pointCount: number;
-  isWorkerSupported:boolean;
-  isWorkerLoaded:boolean;
-  decodedWith:string;
+  isWorkerSupported: boolean;
+  isWorkerLoaded: boolean;
+  decodedWith: string;
   cameraPosition: {
     x: number;
     y: number;
     z: number;
   };
   controlsTarget: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  pose: {
     x: number;
     y: number;
     z: number;
@@ -33,7 +38,7 @@ const DebugPanel: React.FC<DebugPanelProps> = ({ debugInfo }) => {
         <p>Points: {debugInfo.pointCount}</p>
         <p>isWorkerSupported: {debugInfo.isWorkerSupported ? "Yes" : "No"}</p>
         <p>isWorkerLoaded: {debugInfo.isWorkerLoaded ? "Yes" : "No"}</p>
-        <p>decodedWith: {debugInfo.decodedWith }</p>
+        <p>decodedWith: {debugInfo.decodedWith}</p>
       </div>
       <div className="debug-section">
         <h4>Camera</h4>
@@ -50,6 +55,14 @@ const DebugPanel: React.FC<DebugPanelProps> = ({ debugInfo }) => {
           <li>X: {debugInfo.controlsTarget.x.toFixed(2)}</li>
           <li>Y: {debugInfo.controlsTarget.y.toFixed(2)}</li>
           <li>Z: {debugInfo.controlsTarget.z.toFixed(2)}</li>
+        </ul>
+      </div>
+      <div className="debug-section">
+        <h4>Pose</h4>
+        <ul>
+          <li>X: {debugInfo.pose.x.toFixed(2)}</li>
+          <li>Y: {debugInfo.pose.y.toFixed(2)}</li>
+          <li>Z: {debugInfo.pose.z.toFixed(2)}</li>
         </ul>
       </div>
     </div>

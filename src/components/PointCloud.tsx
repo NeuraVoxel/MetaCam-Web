@@ -144,6 +144,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     decodedWith: decodedWith,
     cameraPosition: { x: 0, y: 0, z: 0 },
     controlsTarget: { x: 0, y: 0, z: 0 },
+    pose: { x: 0, y: 0, z: 0 },
   });
 
   const odometryListenerRef = useRef<ROSLIB.Topic | null>(null);
@@ -153,6 +154,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
   const odometryTrajectoryRef = useRef<THREE.Line | null>(null);
   // 设置轨迹线最大长度
   const maxTrajectoryLength = 10000;
+  let _pose: any = { x: 0, y: 0, z: 0 };
 
   // 监听ROS连接状态变化
   useEffect(() => {
@@ -218,34 +220,39 @@ const PointCloud: React.FC<PointCloudProps> = ({
             const pose: any = message.pose?.pose;
             const { orientation, position } = pose;
             // console.log(orientation, position);
+            _pose = {
+              x: position.x,
+              y: position.y,
+              z: position.z,
+            };
+
+            const originalQuat = new THREE.Quaternion();
+            originalQuat.set(
+              orientation.x,
+              orientation.y,
+              orientation.z,
+              orientation.w
+            );
+
+            // 构造旋转四元数
+            const qX = new THREE.Quaternion().setFromAxisAngle(
+              new THREE.Vector3(1, 0, 0),
+              Math.PI / 2 // X 轴 90 度
+            );
+
+            const qY = new THREE.Quaternion().setFromAxisAngle(
+              new THREE.Vector3(0, 1, 0),
+              Math.PI // Y 轴 180 度
+            );
+
+            // 叠加旋转
+            const newQuat = originalQuat
+              .clone()
+              .multiply(qX) // 先绕 X 轴旋转
+              .multiply(qY) // 再绕 Y 轴旋转
+              .normalize(); // 单位化
 
             if (stlModelRef.current) {
-              const originalQuat = new THREE.Quaternion();
-              originalQuat.set(
-                orientation.x,
-                orientation.y,
-                orientation.z,
-                orientation.w
-              );
-
-              // 构造旋转四元数
-              const qX = new THREE.Quaternion().setFromAxisAngle(
-                new THREE.Vector3(1, 0, 0),
-                Math.PI / 2 // X 轴 90 度
-              );
-
-              const qY = new THREE.Quaternion().setFromAxisAngle(
-                new THREE.Vector3(0, 1, 0),
-                Math.PI // Y 轴 180 度
-              );
-
-              // 叠加旋转
-              const newQuat = originalQuat
-                .clone()
-                .multiply(qX) // 先绕 X 轴旋转
-                .multiply(qY) // 再绕 Y 轴旋转
-                .normalize(); // 单位化
-
               stlModelRef.current.quaternion.set(
                 newQuat.x,
                 newQuat.y,
@@ -296,6 +303,20 @@ const PointCloud: React.FC<PointCloudProps> = ({
                 position.z - mesh.userData.zOffset
               );
             }
+
+            // camera.lookAt(position.x, position.y, position.z);
+
+            // const offset = new THREE.Vector3(0, -5, 0);
+            // offset.applyQuaternion(newQuat);
+            // camera.position.copy(position).add(offset);
+
+            // 更新相机姿态
+            // camera.quaternion.set(newQuat.x, newQuat.y, newQuat.z, newQuat.w);
+
+            // camera.updateMatrixWorld(true);
+
+            // controls.target.copy(camera.position);
+            // controls.update();
 
             // 添加轨迹点并更新轨迹线
             updateTrajectory(position);
@@ -884,6 +905,11 @@ const PointCloud: React.FC<PointCloudProps> = ({
           x: controls.target.x,
           y: controls.target.y,
           z: controls.target.z,
+        },
+        pose: {
+          x: _pose?.x || 0,
+          y: _pose?.y || 0,
+          z: _pose?.z || 0,
         },
       });
 
