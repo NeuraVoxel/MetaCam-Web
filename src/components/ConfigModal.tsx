@@ -164,7 +164,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 <span>{config.exposure || 50}</span>
               </div>
             </div>
-            <div className="config-row" style={{flexDirection:"row"}}>
+            <div className="config-row" style={{ flexDirection: "row" }}>
               <label htmlFor="autoExposure">自动曝光</label>
               <input
                 type="checkbox"
@@ -194,7 +194,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
           <div className="config-section">
             <h3>点云设置</h3>
             <div className="config-row">
-            <label htmlFor="maxPointNumber">点数量</label>
+              {/* <label htmlFor="maxPointNumber">点数量</label>
               <input
                 type="number"
                 id="maxPointNumber"
@@ -203,8 +203,10 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 max="3000000"
                 value={config.maxPointNumber || 100000}
                 onChange={handleChange}
-              />
-              <label htmlFor="pointSize">点大小:  <span>{config.pointSize}</span></label>
+              /> */}
+              <label htmlFor="pointSize">
+                点大小: <span>{config.pointSize}</span>
+              </label>
               <input
                 type="range"
                 id="pointSize"
@@ -214,7 +216,6 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 value={config.pointSize}
                 onChange={handleChange}
               />
-             
             </div>
             <div className="config-row">
               <label htmlFor="colorMode">颜色模式</label>
@@ -305,7 +306,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
 
           <div className="config-section">
             <h3>显示设置</h3>
-            <div className="config-row" style={{flexDirection:"row"}}>
+            <div className="config-row" style={{ flexDirection: "row" }}>
               <label htmlFor="showDebugPanel">显示调试面板</label>
               <input
                 type="checkbox"
@@ -315,7 +316,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 onChange={handleChange}
               />
             </div>
-            <div className="config-row" style={{flexDirection:"row"}}>
+            <div className="config-row" style={{ flexDirection: "row" }}>
               <label htmlFor="showStats">显示性能监视器</label>
               <input
                 type="checkbox"
@@ -325,7 +326,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
                 onChange={handleChange}
               />
             </div>
-            <div className="config-row" style={{flexDirection:"row"}}>
+            <div className="config-row" style={{ flexDirection: "row" }}>
               <label htmlFor="processImages">处理图片</label>
               <input
                 type="checkbox"
