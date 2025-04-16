@@ -16,15 +16,15 @@ const ConnectionControl: React.FC<ConnectionControlProps> = ({
       <button
         onClick={onToggleConnection}
         className={`connection-button ${isConnected ? 'connected' : 'disconnected'}`}
-        title={isConnected ? 'Disconnect' : 'Connect'}
+        // title={isConnected ? 'Disconnect' : 'Connect'}
       >
         <FontAwesomeIcon
           icon={isConnected ? faLink : faLinkSlash}
           style={{ fontSize: '20px' }}
         />
-        <span className="connection-status">
+        {/* <span className="connection-status">
           {isConnected ? 'Connected' : 'Disconnected'}
-        </span>
+        </span> */}
       </button>
     </div>
   );

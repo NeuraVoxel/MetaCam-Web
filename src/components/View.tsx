@@ -159,7 +159,7 @@ const View = () => {
             setSystemStatus({
               sdCard: {
                 status: !!statusArray[0] ? "active" : "warning",
-                label: "SD卡",
+                label: "U盘",
               },
               slam: {
                 status: !!statusArray[1] ? "active" : "warning",
@@ -215,10 +215,10 @@ const View = () => {
 
   // 添加系统状态
   const [systemStatus, setSystemStatus] = useState({
-    sdCard: { status: "active", label: "SD卡" },
     slam: { status: "warning", label: "SLAM" },
     cam: { status: "active", label: "CAM" },
     lidar: { status: "active", label: "LIDAR" },
+    sdCard: { status: "active", label: "U盘" },
   });
 
   // 其他状态保持不变
