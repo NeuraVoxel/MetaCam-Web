@@ -85,7 +85,7 @@ interface PointCloudProps {
   cameraMode?: string; // 添加相机视角模式属性
   showStats?: boolean;
 }
-let isFirstPerson: boolean = true;
+let isFreeMode: boolean = true;
 
 const PointCloud: React.FC<PointCloudProps> = ({
   url,
@@ -133,7 +133,6 @@ const PointCloud: React.FC<PointCloudProps> = ({
   let decodedWith: string = "no worker";
   let isWorkerLoaded: boolean = false;
 
-  // 在组件级别定义 firstPersonCamera
   const firstPersonCameraRef = useRef<THREE.PerspectiveCamera | null>(null);
 
   const [debugInfo, setDebugInfo] = useState({
@@ -526,8 +525,8 @@ const PointCloud: React.FC<PointCloudProps> = ({
     if (!viewerRef.current) return;
     console.log("相机模式已切换为:", cameraMode);
     // 当相机模式变化时，如果是第一人称视角，需要重新设置控制器
-    isFirstPerson = cameraMode === "firstPerson";
-    // console.log("isFirstPerson设置为:", cameraMode === "firstPerson", isFirstPerson);
+    isFreeMode = cameraMode === "firstPerson";
+    // console.log("isFreeMode设置为:", cameraMode === "firstPerson", isFreeMode);
     // console.log("controls设置为:", controls);
   }, [cameraMode]);
 
@@ -914,7 +913,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
       });
 
       // 根据当前视角模式选择相机
-      if (isFirstPerson) {
+      if (isFreeMode) {
         controls.enabled = true;
         // if (firstPersonCameraRef.current) {
         //   renderer.render(scene, firstPersonCameraRef.current);
