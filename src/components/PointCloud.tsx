@@ -85,7 +85,7 @@ interface PointCloudProps {
   cameraMode?: string; // 添加相机视角模式属性
   showStats?: boolean;
 }
-let isFirstPerson: boolean = false;
+let isFirstPerson: boolean = true;
 
 const PointCloud: React.FC<PointCloudProps> = ({
   url,
@@ -564,7 +564,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     // camera.position.set(10, 10, 10);
 
     camera.up.set(0, 0, 1);
-    camera.position.set(0, 5, 0); // 将相机放在Y轴上方（原Z轴方向）
+    camera.position.set(-5, 0, 2);
     camera.lookAt(0, 0, 0);
 
     // 3. 创建渲染器
@@ -913,41 +913,39 @@ const PointCloud: React.FC<PointCloudProps> = ({
         },
       });
 
-      // 更新第三人称控制器
-      if (!isFirstPerson) {
-        // 实现第三人称视角
-        if (camera && !controls.enabled && stlModelRef.current) {
-          // 计算模型的朝向向量（基于四元数）
-          // const modelDirection = new THREE.Vector3(0, 1, 0).applyQuaternion(
-          //   stlModelRef.current.quaternion
-          // );
-          // // 设置相机偏移量（后方偏上）
-          // const cameraOffset = new THREE.Vector3(-5, 2, 2);
-          // // 计算相机位置（模型位置 + 根据模型朝向旋转后的偏移量）
-          // const cameraPosition = new THREE.Vector3().copy(
-          //   stlModelRef.current.position
-          // );
-          // cameraPosition.sub(
-          //   modelDirection.clone().multiplyScalar(cameraOffset.x)
-          // );
-          // cameraPosition.y += cameraOffset.y;
-          // cameraPosition.z += cameraOffset.z;
-          // // 更新相机位置
-          // camera.position.copy(cameraPosition);
-          // // 设置相机目标为模型位置
-          // controls.target.copy(stlModelRef.current.position);
-        }
-        controls.update();
-      }
-
       // 根据当前视角模式选择相机
       if (isFirstPerson) {
-        controls.enabled = false;
-        if (firstPersonCameraRef.current) {
-          renderer.render(scene, firstPersonCameraRef.current);
-        }
-      } else {
         controls.enabled = true;
+        // if (firstPersonCameraRef.current) {
+        //   renderer.render(scene, firstPersonCameraRef.current);
+        // }
+        controls.update();
+        renderer.render(scene, camera);
+      } else {
+        controls.enabled = false;
+
+        if (camera && stlModelRef.current) {
+          const modelDirection = new THREE.Vector3(1, 0, 0).applyQuaternion(
+            stlModelRef.current.quaternion
+          );
+
+          const cameraOffset = new THREE.Vector3(-5, 0, 1);
+
+          const cameraPosition = new THREE.Vector3().copy(
+            stlModelRef.current.position
+          );
+          
+          cameraPosition.sub(
+            modelDirection.clone().multiplyScalar(cameraOffset.x)
+          );
+          cameraPosition.y += cameraOffset.y;
+          cameraPosition.z += cameraOffset.z;
+          camera.position.copy(cameraPosition);
+          
+          camera.lookAt(stlModelRef.current.position);
+          controls.target.copy(stlModelRef.current.position);
+        }
+        controls.update();
         renderer.render(scene, camera);
       }
 

@@ -235,7 +235,7 @@ const View = () => {
   });
 
   // 添加相机视角状态
-  const [cameraMode, setCameraMode] = useState("thirdPerson"); // 默认第三人称视角
+  const [cameraMode, setCameraMode] = useState("firstPerson"); // 默认第三人称视角
 
   // 切换相机视角函数
   const toggleCameraMode = () => {
