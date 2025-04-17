@@ -176,7 +176,7 @@ const View = () => {
             });
 
             // 可以在这里添加日志，查看系统状态变化
-            // console.log("系统状态更新:", 
+            // console.log("系统状态更新:",
             //   Object.values({
             //     sdCard: { status: !!statusArray[0] ? "active" : "warning" },
             //     slam: { status: !!statusArray[1] ? "active" : "warning" },
@@ -347,8 +347,9 @@ const View = () => {
           </div>
 
           <div
-            className={`collectiong-status-indicator ${dataCollecting ? "active" : ""
-              }`}
+            className={`collectiong-status-indicator ${
+              dataCollecting ? "active" : ""
+            }`}
           >
             数据采集中
           </div>
@@ -362,8 +363,10 @@ const View = () => {
                 ></div>
                 <span className="system-status-label">{value.label}</span>
                 {/* 在 sdCard 右侧显示 U 盘内存信息，仅当状态为 active 时显示 */}
-                {key === 'sdCard' && value.status === 'active' && (
-                  <span className="status-value storage-info">内存 {storageSpace}</span>
+                {key === "sdCard" && value.status === "active" && (
+                  <span className="status-value storage-info">
+                    内存 {storageSpace}
+                  </span>
                 )}
               </div>
             ))}
@@ -456,13 +459,24 @@ const View = () => {
         <div className="right-controls">
           {/* 添加状态按钮 */}
           <button
-            className={`status-button ${Object.values(systemStatus).every(item => item.status === "active")
+            className={`status-button ${
+              Object.values(systemStatus).every(
+                (item) => item.status === "active"
+              )
                 ? "stop"
-                : Object.values(systemStatus).every(item => item.status === "warning") ? "start" : "waiting"
-              }`}
+                : Object.values(systemStatus).every(
+                    (item) => item.status === "warning"
+                  )
+                ? "start"
+                : "waiting"
+            }`}
             onClick={() => {
               // 根据当前状态执行不同操作
-              if (Object.values(systemStatus).every(item => item.status === "warning")) {
+              if (
+                Object.values(systemStatus).every(
+                  (item) => item.status === "warning"
+                )
+              ) {
                 // 所有系统组件都是warning状态，显示启动按钮，点击后执行启动操作
                 console.log("开始操作");
                 // 这里可以添加启动相关的逻辑
@@ -472,7 +486,11 @@ const View = () => {
                   lidar: { status: "active", label: "LIDAR" },
                   sdCard: { status: "warning", label: "U盘" },
                 });
-              } else if (Object.values(systemStatus).every(item => item.status === "active")) {
+              } else if (
+                Object.values(systemStatus).every(
+                  (item) => item.status === "active"
+                )
+              ) {
                 // 所有系统组件都是active状态，显示停止按钮，点击后执行停止操作
                 console.log("停止操作");
                 // 这里可以添加停止相关的逻辑
@@ -497,6 +515,20 @@ const View = () => {
           >
             <span className="status-icon"></span>
           </button>
+           {/* 添加切换相机视角按钮 */}
+           <button
+            className={`camera-mode-button ${cameraMode}`}
+            onClick={toggleCameraMode}
+            title={
+              cameraMode === "firstPerson"
+                ? "切换到第三人称视角"
+                : "切换到自由模式"
+            }
+          >
+            <span className="camera-mode-icon">
+              {cameraMode === "firstPerson" ? "👁️" : "🎥"}
+            </span>
+          </button>
 
           {/* <button
             className={`record-button ${isRecording ? "recording" : ""}`}
@@ -510,20 +542,7 @@ const View = () => {
           <button className="files-button">
             <span className="files-icon"></span>
           </button>
-          {/* 添加切换相机视角按钮 */}
-          <button
-            className={`camera-mode-button ${cameraMode}`}
-            onClick={toggleCameraMode}
-            title={
-              cameraMode === "firstPerson"
-                ? "切换到第三人称视角"
-                : "切换到自由模式"
-            }
-          >
-            <span className="camera-mode-icon">
-              {cameraMode === "firstPerson" ? "👁️" : "🎥"}
-            </span>
-          </button>
+         
         </div>
       </div>
 
