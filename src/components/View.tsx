@@ -174,7 +174,7 @@ const View = () => {
                 label: "LIDAR",
               },
             });
-            
+
             // 可以在这里添加日志，查看系统状态变化
             // console.log("系统状态更新:", 
             //   Object.values({
@@ -225,10 +225,10 @@ const View = () => {
 
   // 添加系统状态
   const [systemStatus, setSystemStatus] = useState({
-    slam: { status: "active", label: "SLAM" },
-    cam: { status: "active", label: "CAM" },
-    lidar: { status: "active", label: "LIDAR" },
-    sdCard: { status: "active", label: "U盘" },
+    slam: { status: "warning", label: "SLAM" },
+    cam: { status: "warning", label: "CAM" },
+    lidar: { status: "warning", label: "LIDAR" },
+    sdCard: { status: "warning", label: "U盘" },
   });
 
   // 其他状态保持不变
@@ -324,7 +324,7 @@ const View = () => {
   };
 
   function closePanoramaPreview(e: any): void {
-    console.log("关闭全景预览",e);
+    console.log("关闭全景预览", e);
   }
 
   return (
@@ -347,9 +347,8 @@ const View = () => {
           </div>
 
           <div
-            className={`collectiong-status-indicator ${
-              dataCollecting ? "active" : ""
-            }`}
+            className={`collectiong-status-indicator ${dataCollecting ? "active" : ""
+              }`}
           >
             数据采集中
           </div>
@@ -456,41 +455,55 @@ const View = () => {
         {/* 右侧功能按钮 */}
         <div className="right-controls">
           {/* 添加状态按钮 */}
-          <button 
-            className={`status-button ${
-              Object.values(systemStatus).every(item => item.status === "active") 
-                ? "stop" 
-                : Object.values(systemStatus).every(item => item.status === "warning") ?"start":"waiting"
-            }`}
+          <button
+            className={`status-button ${Object.values(systemStatus).every(item => item.status === "active")
+                ? "stop"
+                : Object.values(systemStatus).every(item => item.status === "warning") ? "start" : "waiting"
+              }`}
             onClick={() => {
               // 根据当前状态执行不同操作
               if (Object.values(systemStatus).every(item => item.status === "warning")) {
-                // 所有系统组件都是active状态，显示停止按钮，点击后执行停止操作
+                // 所有系统组件都是warning状态，显示启动按钮，点击后执行启动操作
                 console.log("开始操作");
-                // 这里可以添加停止相关的逻辑
-              }else if (Object.values(systemStatus).every(item => item.status === "active")) {
+                // 这里可以添加启动相关的逻辑
+                setSystemStatus({
+                  slam: { status: "active", label: "SLAM" },
+                  cam: { status: "active", label: "CAM" },
+                  lidar: { status: "active", label: "LIDAR" },
+                  sdCard: { status: "warning", label: "U盘" },
+                });
+              } else if (Object.values(systemStatus).every(item => item.status === "active")) {
                 // 所有系统组件都是active状态，显示停止按钮，点击后执行停止操作
                 console.log("停止操作");
                 // 这里可以添加停止相关的逻辑
+                setSystemStatus({
+                  slam: { status: "warning", label: "SLAM" },
+                  cam: { status: "warning", label: "CAM" },
+                  lidar: { status: "warning", label: "LIDAR" },
+                  sdCard: { status: "warning", label: "U盘" },
+                });
               } else {
                 // 有系统组件不是active状态，显示等待按钮，点击后可能无操作或提示
                 console.log("系统正在准备中，请稍候...");
                 // 可以添加提示用户等待的逻辑
+                setSystemStatus({
+                  slam: { status: "active", label: "SLAM" },
+                  cam: { status: "active", label: "CAM" },
+                  lidar: { status: "active", label: "LIDAR" },
+                  sdCard: { status: "active", label: "U盘" },
+                });
               }
             }}
           >
-            {Object.values(systemStatus).every(item => item.status === "active") 
-              ? "停止" 
-              : Object.values(systemStatus).every(item => item.status === "warning") ?"启动":"等待中"
-            }
+            <span className="status-icon"></span>
           </button>
-          
-          <button
+
+          {/* <button
             className={`record-button ${isRecording ? "recording" : ""}`}
             onClick={toggleRecording}
           >
             <span className="record-icon"></span>
-          </button>
+          </button> */}
           <button className="location-button">
             <span className="location-icon"></span>
           </button>

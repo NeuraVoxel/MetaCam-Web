@@ -462,12 +462,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   margin-bottom: 10px;
   border: none;
-  border-radius: 20px;
-  font-weight: bold;
+  border-radius: 50%;
   color: white;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -494,4 +493,35 @@
 .status-button.waiting:hover {
   opacity: 0.9;
   transform: none;
+}
+
+/* 状态图标样式 */
+.status-icon {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+/* 停止图标 - 方形 */
+.status-button.stop .status-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M6 6h12v12H6z'/%3E%3C/svg%3E");
+}
+
+/* 启动图标 - 三角形 */
+.status-button.start .status-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E");
+}
+
+/* 等待图标 - 时钟/加载 */
+.status-button.waiting .status-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/%3E%3C/svg%3E");
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
