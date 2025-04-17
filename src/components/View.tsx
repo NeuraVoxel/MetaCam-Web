@@ -352,6 +352,10 @@ const View = () => {
                   className={`system-status-indicator ${value.status}`}
                 ></div>
                 <span className="system-status-label">{value.label}</span>
+                {/* 在 sdCard 右侧显示 U 盘内存信息，仅当状态为 active 时显示 */}
+                {key === 'sdCard' && value.status === 'active' && (
+                  <span className="status-value storage-info">内存 {storageSpace}</span>
+                )}
               </div>
             ))}
           </div>
@@ -362,10 +366,11 @@ const View = () => {
             <span className="status-label">任务时长</span>
             <span className="status-value">{elapsedTime}</span>
           </div>
-          <div className="status-item">
+          {/* 移除原来的 U 盘内存显示 */}
+          {/* <div className="status-item">
             <span className="status-label">U盘内存</span>
             <span className="status-value">{storageSpace}</span>
-          </div>
+          </div> */}
           {/* <div className="status-item">
             <span className="status-label">RTK</span>
             <span className="status-value">{rtkStatus}</span>
