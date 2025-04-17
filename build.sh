@@ -7,7 +7,7 @@ ANDROID_ASSETS_PATH="../MetaCam-App/app/src/main/assets/web"  # Android assets�
 # 构建React项目
 echo "Building React project..."
 cd $REACT_PROJECT_PATH
-npm run build
+npm run build:release
 
 # 确保Android assets目录存在
 mkdir -p $ANDROID_ASSETS_PATH
