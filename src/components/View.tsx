@@ -174,6 +174,16 @@ const View = () => {
                 label: "LIDAR",
               },
             });
+            
+            // 可以在这里添加日志，查看系统状态变化
+            // console.log("系统状态更新:", 
+            //   Object.values({
+            //     sdCard: { status: !!statusArray[0] ? "active" : "warning" },
+            //     slam: { status: !!statusArray[1] ? "active" : "warning" },
+            //     cam: { status: !!statusArray[2] ? "active" : "warning" },
+            //     lidar: { status: !!statusArray[3] ? "active" : "warning" },
+            //   }).every(item => item.status === "active")
+            // );
           }
         );
       }
@@ -215,7 +225,7 @@ const View = () => {
 
   // 添加系统状态
   const [systemStatus, setSystemStatus] = useState({
-    slam: { status: "warning", label: "SLAM" },
+    slam: { status: "active", label: "SLAM" },
     cam: { status: "active", label: "CAM" },
     lidar: { status: "active", label: "LIDAR" },
     sdCard: { status: "active", label: "U盘" },
@@ -445,6 +455,36 @@ const View = () => {
 
         {/* 右侧功能按钮 */}
         <div className="right-controls">
+          {/* 添加状态按钮 */}
+          <button 
+            className={`status-button ${
+              Object.values(systemStatus).every(item => item.status === "active") 
+                ? "stop" 
+                : Object.values(systemStatus).every(item => item.status === "warning") ?"start":"waiting"
+            }`}
+            onClick={() => {
+              // 根据当前状态执行不同操作
+              if (Object.values(systemStatus).every(item => item.status === "warning")) {
+                // 所有系统组件都是active状态，显示停止按钮，点击后执行停止操作
+                console.log("开始操作");
+                // 这里可以添加停止相关的逻辑
+              }else if (Object.values(systemStatus).every(item => item.status === "active")) {
+                // 所有系统组件都是active状态，显示停止按钮，点击后执行停止操作
+                console.log("停止操作");
+                // 这里可以添加停止相关的逻辑
+              } else {
+                // 有系统组件不是active状态，显示等待按钮，点击后可能无操作或提示
+                console.log("系统正在准备中，请稍候...");
+                // 可以添加提示用户等待的逻辑
+              }
+            }}
+          >
+            {Object.values(systemStatus).every(item => item.status === "active") 
+              ? "停止" 
+              : Object.values(systemStatus).every(item => item.status === "warning") ?"启动":"等待中"
+            }
+          </button>
+          
           <button
             className={`record-button ${isRecording ? "recording" : ""}`}
             onClick={toggleRecording}

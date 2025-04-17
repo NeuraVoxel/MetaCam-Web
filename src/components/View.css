@@ -456,3 +456,42 @@
   padding: 2px 6px;
   border-radius: 4px;
 }
+
+/* 状态按钮样式 */
+.status-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 40px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 20px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.status-button.stop {
+  background-color: #e74c3c; /* 红色表示停止 */
+}
+
+.status-button.waiting {
+  background-color: #f39c12; /* 黄色表示等待 */
+  cursor: not-allowed;
+}
+
+.status-button.start {
+  background-color: #2ecc71; /* 绿色表示开始 */
+}
+
+.status-button:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+.status-button.waiting:hover {
+  opacity: 0.9;
+  transform: none;
+}
