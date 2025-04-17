@@ -14,8 +14,9 @@ import { useNavigate } from "react-router-dom";
 import rosService from "./services/ROSService";
 
 // 全局ROS服务器配置
-// const DEFAULT_ROS_SERVER = "192.168.117.6";
-const DEFAULT_ROS_SERVER = "192.168.1.11";
+// 根据环境变量获取ROS服务器地址，如果未设置则使用默认值
+const DEFAULT_ROS_SERVER = process.env.REACT_APP_ROS_SERVER || "192.168.1.11";
+console.log("当前ROS服务器地址:", DEFAULT_ROS_SERVER, "环境:", process.env.NODE_ENV);
 
 // ROS连接状态上下文
 export const ROSContext = React.createContext({
