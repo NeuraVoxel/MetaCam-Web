@@ -141,7 +141,7 @@ const View = () => {
           "std_msgs/UInt8",
           (message: any) => {
             // console.log("收到系统状态:", message);
-            // 8 bytes. 0,0,0,0,SD,SLAM,CAM,LiDAR
+            // 8 bytes. 0,0,0,0,LIDAR,CAM,SLAM,U盘
             const statusArray = [
               message.data & 0x01,
               (message.data >> 1) & 0x01,
@@ -157,21 +157,21 @@ const View = () => {
             // );
 
             setSystemStatus({
-              sdCard: {
+              lidar: {
                 status: !!statusArray[0] ? "active" : "warning",
-                label: "U盘",
-              },
-              slam: {
-                status: !!statusArray[1] ? "active" : "warning",
-                label: "SLAM",
+                label: "LIDAR",
               },
               cam: {
-                status: !!statusArray[2] ? "active" : "warning",
+                status: !!statusArray[1] ? "active" : "warning",
                 label: "CAM",
               },
-              lidar: {
+              slam: {
+                status: !!statusArray[2] ? "active" : "warning",
+                label: "SLAM",
+              },
+              sdCard: {
                 status: !!statusArray[3] ? "active" : "warning",
-                label: "LIDAR",
+                label: "U盘",
               },
             });
 
