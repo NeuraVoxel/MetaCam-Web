@@ -93,7 +93,7 @@ const View = () => {
 
         // 订阅缩略图 keyframe image
         keyframeImageListenerRef.current = rosService.subscribeTopic(
-          "/camera/right/jpeg",
+          "/keyframe",
           "sensor_msgs/CompressedImage",
           (message: any) => {
             // 检查是否启用图片处理
@@ -101,7 +101,6 @@ const View = () => {
               return; // 如果未启用图片处理，直接返回
             }
 
-            // console.log("收到缩略图:", message);
             // console.log(keyframeCanvasRef);
             if (keyframeCanvasRef.current) {
               const canvas = keyframeCanvasRef.current as HTMLCanvasElement;
@@ -116,7 +115,7 @@ const View = () => {
               }
 
               try {
-                if (message.format === "jpeg" || message.format === "png") {
+                if (message.format.includes("jpeg") || message.format === "png") {
                   const image = new Image();
                   image.src =
                     "data:image/" + message.format + ";base64," + message.data;
@@ -240,7 +239,7 @@ const View = () => {
     autoSave: false,
     saveInterval: 60,
     showDebugPanel: false,
-    processImages: false, // 添加图片处理开关，默认开启
+    processImages: true, // 添加图片处理开关，默认开启
     showStats: false, // 添加showStats配置项
     maxPointNumber: 300000, // 添加showStats配置项
   });
@@ -423,7 +422,7 @@ const View = () => {
         <div className="point-cloud-container">
           <PointCloud
             url={`ws://${rosServerIp}:9090`}
-            topic="/lidar_out"
+            topic="/point_cloud"
             width={1200}
             height={800}
             pointSize={config.pointSize}
