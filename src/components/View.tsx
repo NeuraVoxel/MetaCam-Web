@@ -101,7 +101,6 @@ const View = () => {
               return; // 如果未启用图片处理，直接返回
             }
 
-            // console.log("收到缩略图:", message);
             // console.log(keyframeCanvasRef);
             if (keyframeCanvasRef.current) {
               const canvas = keyframeCanvasRef.current as HTMLCanvasElement;
@@ -240,7 +239,7 @@ const View = () => {
     autoSave: false,
     saveInterval: 60,
     showDebugPanel: false,
-    processImages: false, // 添加图片处理开关，默认开启
+    processImages: true, // 添加图片处理开关，默认开启
     showStats: false, // 添加showStats配置项
     maxPointNumber: 300000, // 添加showStats配置项
   });
