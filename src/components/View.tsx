@@ -93,7 +93,7 @@ const View = () => {
 
         // 订阅缩略图 keyframe image
         keyframeImageListenerRef.current = rosService.subscribeTopic(
-          "/camera/right/jpeg",
+          "/keyframe",
           "sensor_msgs/CompressedImage",
           (message: any) => {
             // 检查是否启用图片处理
@@ -116,7 +116,7 @@ const View = () => {
               }
 
               try {
-                if (message.format === "jpeg" || message.format === "png") {
+                if (message.format.includes("jpeg") || message.format === "png") {
                   const image = new Image();
                   image.src =
                     "data:image/" + message.format + ";base64," + message.data;
@@ -423,7 +423,7 @@ const View = () => {
         <div className="point-cloud-container">
           <PointCloud
             url={`ws://${rosServerIp}:9090`}
-            topic="/lidar_out"
+            topic="/point_cloud"
             width={1200}
             height={800}
             pointSize={config.pointSize}
