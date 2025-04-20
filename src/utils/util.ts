@@ -24,7 +24,9 @@ const getCurrentTimestamp = () => {
   const milliseconds = String(now.getMilliseconds()).padStart(3, '0'); // 补零到3位
 
   // 格式：YYYY-MM-DD HH:mm:ss.sss
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+  const timestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+  console.log(`getCurrentTimestamp: ${timestamp}`);
+  return timestamp;
 }
 
-export { decode64, isWorkerSupported,getCurrentTimestamp };
+export { decode64, isWorkerSupported, getCurrentTimestamp };
