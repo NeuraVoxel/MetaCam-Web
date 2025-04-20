@@ -14,7 +14,7 @@ const View = () => {
 
   // useState
   const [isRecording, setIsRecording] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState("0.1h");
+  const [elapsedTime, setElapsedTime] = useState(0.0);
   const [storageSpace, setStorageSpace] = useState("167G");
   const [rtkStatus, setRtkStatus] = useState("无解");
   const [signalStrength, setSignalStrength] = useState(4);
@@ -84,10 +84,10 @@ const View = () => {
         // 订阅任务时长
         elapsedTimeListenerRef.current = rosService.subscribeTopic(
           "/project_duration",
-          "std_msgs/Float32",
+          "std_msgs/Float64",
           (message: any) => {
             // console.log("收到任务时长:", message);
-            setElapsedTime(`${message.data.toFixed(2)}h`);
+            setElapsedTime(message.data);
           }
         );
 
@@ -259,44 +259,16 @@ const View = () => {
   //   }
   // }, [config.processImages]); // 仅在processImages变化时重新设置订阅
 
-  useEffect(() => {
-    // 模拟计时器
-    if (isRecording) {
-      const timer = setInterval(() => {
-        const [minutes, seconds] = elapsedTime.split(":").map(Number);
-        let newSeconds = seconds + 1;
-        let newMinutes = minutes;
-
-        if (newSeconds >= 60) {
-          newSeconds = 0;
-          newMinutes += 1;
-        }
-
-        setElapsedTime(
-          `${newMinutes.toString().padStart(2, "0")}:${newSeconds
-            .toString()
-            .padStart(2, "0")}`
-        );
-      }, 1000);
-
-      return () => clearInterval(timer);
-    }
-  }, [isRecording, elapsedTime]);
-
-  const toggleRecording = () => {
-    setIsRecording(!isRecording);
+  const toggleRecording = (enable: boolean = !isRecording) => {
+    setIsRecording(enable);
     try {
       rosService
-        .callService<
+        .callService<{params: string;}, { success: boolean; message: string }>
+        ("/project_control", "metacam_node/ProjectControl", 
           {
-            command: string;
-            action: string;
-          },
-          { success: boolean; message: string }
-        >("/project_control", "metacam_node/ProjectControl", {
-          command: "project_control",
-          action: isRecording ? "stop" : "start",
-        })
+          params: enable ? "/start_device" : "/stop_device",
+          }
+        )
         .then((response: any) => {
           console.log("project_control:", response);
         })
@@ -375,7 +347,7 @@ const View = () => {
         <div className="status-info">
           <div className="status-item">
             <span className="status-label">任务时长</span>
-            <span className="status-value">{elapsedTime}</span>
+            <span className="status-value">{`${Math.floor(Number(elapsedTime)/60)}:${(Number(elapsedTime)%60).toFixed(0).padStart(2,'0')}`}</span>
           </div>
           {/* 移除原来的 U 盘内存显示 */}
           {/* <div className="status-item">
@@ -459,56 +431,28 @@ const View = () => {
           {/* 添加状态按钮 */}
           <button
             className={`status-button ${
-              Object.values(systemStatus).every(
-                (item) => item.status === "active"
-              )
+              (systemStatus.lidar.status === "active" && systemStatus.cam.status === "active")
                 ? "stop"
-                : Object.values(systemStatus).every(
-                    (item) => item.status === "warning"
-                  )
-                ? "start"
-                : "waiting"
+                : elapsedTime > 0.001 && elapsedTime < 60
+                ? "waiting"
+                : "start"
             }`}
             onClick={() => {
-              // 根据当前状态执行不同操作
-              if (
-                Object.values(systemStatus).every(
-                  (item) => item.status === "warning"
-                )
-              ) {
-                // 所有系统组件都是warning状态，显示启动按钮，点击后执行启动操作
+              // 根据status-button的class属性判断
+              const buttonClass = (systemStatus.lidar.status === "active" && systemStatus.cam.status === "active") 
+                ? "stop"
+                : elapsedTime > 0.001 && elapsedTime < 60
+                ? "waiting" 
+                : "start";
+                
+              if (buttonClass === "start") {
                 console.log("开始操作");
-                // 这里可以添加启动相关的逻辑
-                setSystemStatus({
-                  slam: { status: "active", label: "SLAM" },
-                  cam: { status: "active", label: "CAM" },
-                  lidar: { status: "active", label: "LIDAR" },
-                  sdCard: { status: "warning", label: "U盘" },
-                });
-              } else if (
-                Object.values(systemStatus).every(
-                  (item) => item.status === "active"
-                )
-              ) {
-                // 所有系统组件都是active状态，显示停止按钮，点击后执行停止操作
+                toggleRecording(true);
+              } else if (buttonClass === "stop") {
                 console.log("停止操作");
-                // 这里可以添加停止相关的逻辑
-                setSystemStatus({
-                  slam: { status: "warning", label: "SLAM" },
-                  cam: { status: "warning", label: "CAM" },
-                  lidar: { status: "warning", label: "LIDAR" },
-                  sdCard: { status: "warning", label: "U盘" },
-                });
+                toggleRecording(false); 
               } else {
-                // 有系统组件不是active状态，显示等待按钮，点击后可能无操作或提示
                 console.log("系统正在准备中，请稍候...");
-                // 可以添加提示用户等待的逻辑
-                setSystemStatus({
-                  slam: { status: "active", label: "SLAM" },
-                  cam: { status: "active", label: "CAM" },
-                  lidar: { status: "active", label: "LIDAR" },
-                  sdCard: { status: "active", label: "U盘" },
-                });
               }
             }}
           >
