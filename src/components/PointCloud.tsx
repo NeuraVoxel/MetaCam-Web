@@ -219,7 +219,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
       if (rosService.isConnected()) {
         // 订阅Odometry
         odometryListenerRef.current = rosService.subscribeTopic(
-          "/Odometry",
+          "/slam_pose",
           "nav_msgs/Odometry",
           (message: any) => {
             // console.log("收到Odometry:", message);
