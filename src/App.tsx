@@ -162,10 +162,10 @@ function App() {
     try {
       // 调用服务并等待响应
       const promise = rosService.callService<
-        { timestamp: string },
+        { params: string },
         { success: boolean; message: string }
       >("/set_system_time", "metacam_node/TimeSync", {
-        timestamp: getCurrentTimestamp(),
+        params: getCurrentTimestamp(),
       });
 
       promise

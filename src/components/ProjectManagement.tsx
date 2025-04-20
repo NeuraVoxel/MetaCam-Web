@@ -59,14 +59,13 @@ const ProjectManagement: React.FC = () => {
       // 调用服务并等待响应
       setLoading(true);
       rosService
-        .callService<
+        .callService<{ params: string }, { success: boolean; message: string }>(
+          "/project_list",
+          "metacam_node/Version",
           {
-            command: string;
-          },
-          { success: boolean; message: string }
-        >("/project_list", "metacam_node/Version", {
-          command: "project_list",
-        })
+            params: "",
+          }
+        )
         .then((response: any) => {
           console.log("project_list:", response);
           const tasks: string[] = response.tasks;
