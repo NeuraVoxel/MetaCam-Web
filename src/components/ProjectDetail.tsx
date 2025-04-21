@@ -210,12 +210,10 @@ const ProjectDetail: React.FC = () => {
         // 调用服务并等待响应
         rosService
           .callService<
-            {
-              task_name: string;
-            },
+            { params: string },
             { success: boolean; message: string }
           >("/project_cloud", "metacam_node/ProjectCloud", {
-            task_name: id,
+            params: id,
           })
           .then((response: any) => {
             console.log("project_cloud:", response);
