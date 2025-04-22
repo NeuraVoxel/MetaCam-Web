@@ -543,7 +543,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
     // Stats setup
     stats.showPanel(0);
     stats.dom.style.cssText = "position:absolute;top:0;right:0;";
-    viewerRef.current.appendChild(stats.dom);
+    // viewerRef.current.appendChild(stats.dom);
 
     console.log(THREE.REVISION);
 
@@ -605,7 +605,7 @@ const PointCloud: React.FC<PointCloudProps> = ({
 
     // 创建坐标轴辅助器，长度设为 5
     const axesHelper = new THREE.AxesHelper(5);
-    scene.add(axesHelper);
+    // scene.add(axesHelper);
 
     // const gridHelper = new THREE.GridHelper(10, 10);
     // scene.add(gridHelper);
