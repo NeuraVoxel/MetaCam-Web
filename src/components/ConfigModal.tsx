@@ -89,7 +89,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
 
   return (
     <div className="config-modal-overlay">
-      <div className="config-modal">
+      <div className="config-modal" style={{minHeight: window.innerHeight+'px'}}>
         <div className="config-modal-header">
           <h2>参数配置</h2>
           <button className="close-button" onClick={onClose}>
