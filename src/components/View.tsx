@@ -319,10 +319,16 @@ const View = () => {
 
           <div
             className={`collectiong-status-indicator ${
-              dataCollecting ? "active" : ""
+              (systemStatus.lidar.status === "active" && systemStatus.cam.status === "active")
+                ? "active"
+                : ""
             }`}
           >
-            数据采集中
+            {(systemStatus.lidar.status === "active" && systemStatus.cam.status === "active")
+              ? "数据采集中"
+              : elapsedTime > 0.001 && elapsedTime < 60
+              ? "准备中..."
+              : "等待采集"}
           </div>
 
           {/* 添加系统状态指示器 */}
