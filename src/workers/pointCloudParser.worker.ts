@@ -9,8 +9,8 @@ const parsePointCloud = (msg: any) => {
 
   const points: number[] = [];
   const colors: number[] = [];
+  const intensities: number[] = [];
 
-  // console.log(msg.width);
 
   for (let i = 0; i < msg.width; i++) {
     const pointOffset = i * msg.point_step;
@@ -31,6 +31,20 @@ const parsePointCloud = (msg: any) => {
               b: (rgbInt & 0xff) / 255
             };
             colors.push(rgb.r, rgb.g, rgb.b);
+          } else if (name === 'intensity' && colors.length === 0) {
+            // intensity to color using jet colormap
+            const intensity = dataView.getFloat32(byteOffset, !msg.is_bigendian) / 255;
+            const normalized = Math.max(0, Math.min(1, intensity));
+            
+            const r = Math.min(4 * normalized - 1.5, -4 * normalized + 4.5);
+            const g = Math.min(4 * normalized - 0.5, -4 * normalized + 3.5);
+            const b = Math.min(4 * normalized + 0.5, -4 * normalized + 2.5);
+            
+            intensities.push(
+              Math.max(0, Math.min(1, r)),
+              Math.max(0, Math.min(1, g)), 
+              Math.max(0, Math.min(1, b))
+            );
           }
           break;
         case 6:
@@ -42,7 +56,7 @@ const parsePointCloud = (msg: any) => {
 
   return {
     points,
-    colors
+    colors: colors.length > 0 ? colors : intensities,
   };
 };
 

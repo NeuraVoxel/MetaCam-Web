@@ -12,11 +12,17 @@ import ProjectManagement from "./components/ProjectManagement";
 import ProjectDetail from "./components/ProjectDetail";
 import { useNavigate } from "react-router-dom";
 import rosService from "./services/ROSService";
+import { getCurrentTimestamp } from "./utils/util";
 
 // 全局ROS服务器配置
 // 根据环境变量获取ROS服务器地址，如果未设置则使用默认值
 const DEFAULT_ROS_SERVER = process.env.REACT_APP_ROS_SERVER || "192.168.1.11";
-console.log("当前ROS服务器地址:", DEFAULT_ROS_SERVER, "环境:", process.env.NODE_ENV);
+console.log(
+  "当前ROS服务器地址:",
+  DEFAULT_ROS_SERVER,
+  "环境:",
+  process.env.NODE_ENV
+);
 
 // ROS连接状态上下文
 export const ROSContext = React.createContext({
@@ -30,7 +36,8 @@ export const ROSContext = React.createContext({
 function LoginPage() {
   const navigate = useNavigate();
   const [isDeviceConnected, setIsDeviceConnected] = useState(false);
-  const { connectToROS, rosServerIp, setRosServerIp } = React.useContext(ROSContext);
+  const { connectToROS, rosServerIp, setRosServerIp } =
+    React.useContext(ROSContext);
 
   // 模拟设备连接状态检查
   useEffect(() => {
@@ -100,18 +107,21 @@ function LoginPage() {
 
       <div className="card-container horizontal">
         {/* 连接设备状态 */}
-          <div className="card-button" onClick={() => {
+        <div
+          className="card-button"
+          onClick={() => {
             if (!rosService.isConnected()) {
               connectToROS(`ws://${rosServerIp}:9090`);
             }
-          }}>
-            <i
-              className={`status-indicator ${
-                isDeviceConnected? "  status-connected" : "status-disconnected"
-              }`}
-            />
-             <span>{isDeviceConnected? "设备已连接" : "设备未连接"}</span>
-          </div>
+          }}
+        >
+          <i
+            className={`status-indicator ${
+              isDeviceConnected ? "  status-connected" : "status-disconnected"
+            }`}
+          />
+          <span>{isDeviceConnected ? "设备已连接" : "设备未连接"}</span>
+        </div>
 
         {/* 项目管理按钮 - 新增 */}
         <div className="card-button" onClick={() => navigate("/projects")}>
@@ -148,6 +158,29 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [rosServerIp, setRosServerIp] = useState(DEFAULT_ROS_SERVER);
 
+  async function callTimeSyncService() {
+    try {
+      // 调用服务并等待响应
+      const promise = rosService.callService<
+        { params: string },
+        { success: boolean; message: string }
+      >("/set_system_time", "metacam_node/TimeSync", {
+        params: getCurrentTimestamp(),
+      });
+
+      promise
+        .then((response: any) => {
+          console.log(response);
+          console.log("服务调用成功:", response, "系统时间已同步");
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    } catch (error) {
+      console.error("服务调用失败:", error);
+    }
+  }
+
   async function exampleServiceCall() {
     try {
       // 调用服务并等待响应
@@ -180,6 +213,7 @@ function App() {
       if (status === "connected") {
         setupSubscribers();
         // exampleServiceCall();
+        callTimeSyncService();
       } else if (status === "disconnected" || status === "error") {
         cleanupSubscribers();
       }
