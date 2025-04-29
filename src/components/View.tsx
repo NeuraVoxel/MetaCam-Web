@@ -148,13 +148,6 @@ const View = () => {
               (message.data >> 3) & 0x01,
             ];
 
-            // console.log(
-            //   "Driver status received:",
-            //   message.data,
-            //   "Parsed status:",
-            //   statusArray
-            // );
-
             setSystemStatus({
               lidar: {
                 status: !!statusArray[0] ? "active" : "warning",
@@ -458,7 +451,8 @@ const View = () => {
                 console.log("停止操作");
                 toggleRecording(false); 
               } else {
-                console.log("系统正在准备中，请稍候...");
+                console.log("系统正在准备中，执行停止操作");
+                toggleRecording(false);
               }
             }}
           >
