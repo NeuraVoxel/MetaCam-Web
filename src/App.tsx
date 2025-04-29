@@ -103,7 +103,7 @@ function LoginPage() {
           🔌
         </button>
       </div>
-      <h1>MetaCam</h1>
+      <h1>SLAMIBot</h1>
 
       <div className="card-container horizontal">
         {/* 连接设备状态 */}
